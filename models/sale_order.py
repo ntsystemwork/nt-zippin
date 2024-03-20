@@ -122,7 +122,8 @@ class SaleOrder(models.Model):
 
 
     def action_zippin_get_label(self):
-
+        if not self.zippin_shipping_id:
+            raise ValidationError('Debe generar el envio de Zippin')
         url = APIURL + "/shipments/" + self.zippin_shipping_id +"/documentation?what=label&format=pdf"
         #url = APIURL + "/shipments/577722/documentation?what=label&format=pdf"
 
@@ -137,10 +138,10 @@ class SaleOrder(models.Model):
         log_id = self.env['zippin.log'].create(vals_log)
         self.env.cr.commit()
 
-        if r.status_code < 400:
+        if r.status_code == 403:
             raise ValidationError('Zippin: Error de autorización, revise sus credenciales.')
         else:
             r = r.json()
-            self.zippin_shipping_label_bin = r.get("body")
+            self.zippin_shipping_label_bin = r["body"]
             self.zippin_create_label_view = True
 
