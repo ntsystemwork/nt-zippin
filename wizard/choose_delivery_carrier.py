@@ -18,7 +18,7 @@ class ChooseDeliveryCarrier(models.TransientModel):
                 if zp_vals.get('success') and zp_vals.get('price') != 0 and zp_vals.get('price') <  max_price:
                     max_price = zp_vals.get('price')
                     result = zp_vals
-            if result.get('success'):
+            if result and result.get('success'):
                 self.zippin_logistic_type = result['logistic_type']
                 self.env['zippin.shipping'].create(result['zippin_pickup'])
         return res
