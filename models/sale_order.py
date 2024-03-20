@@ -142,6 +142,9 @@ class SaleOrder(models.Model):
             raise ValidationError('Zippin: Error de autorización, revise sus credenciales.')
         else:
             r = r.json()
-            self.zippin_shipping_label_bin = r["body"]
-            self.zippin_create_label_view = True
+            if 'body' in r:
+                self.zippin_shipping_label_bin = r["body"]
+                self.zippin_create_label_view = True
+            else:
+                raise ValidationError('La etiqueta no esta disponible aun. Intente en un momento')
 
