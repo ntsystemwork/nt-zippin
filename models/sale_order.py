@@ -16,8 +16,9 @@ class SaleOrder(models.Model):
                 or bom_line.product_id.product_height == False \
                 or bom_line.product_id.product_width == False \
                 or bom_line.product_id.product_length == False) \
+                and bom_line.product_id.type == 'product' \
                 and not bom_line.product_id.bom_ids:
-                raise ValidationError('Error: El producto ' + bom_line.product_id.name + ' debe tener peso y tamaño asignados.')
+                raise ValidationError('#5 Error: El producto ' + bom_line.product_id.name + ' debe tener peso y tamaño asignados.')
             if not bom_line.product_id.bom_ids:
                 for i in range(int(qty * bom_line.product_qty)):
                     product_list = {
@@ -44,7 +45,7 @@ class SaleOrder(models.Model):
                             or p.product_id.product_height == False \
                             or p.product_id.product_width == False \
                             or p.product_id.product_length == False:
-                        raise ValidationError('Error: El producto ' + p.product_id.name + ' debe tener peso y tamaño asignados.')
+                        raise ValidationError('#6 Error: El producto ' + p.product_id.name + ' debe tener peso y tamaño asignados.')
 
                     for i in range(int(p.product_uom_qty)):
                         product_list = {
@@ -148,3 +149,17 @@ class SaleOrder(models.Model):
             else:
                 raise ValidationError('La etiqueta no esta disponible aun. Intente en un momento')
 
+
+
+    def write(self, vals):
+        res = super(SaleOrder, self).write(vals)
+        for rec in self:
+            if rec.team_id.id == self.env.ref('sales_team.salesteam_website_sales').id and rec.state == 'sent':
+                if rec.zippin_pickup_order_id and not rec.zippin_shipping_id:
+                    for order_line in rec.order_line:
+                        if order_line.product_id.type == 'service':
+                            carrier = self.env['delivery.carrier'].search([('product_id','=',order_line.product_id.id)])
+                            if carrier:
+                                order = order_line.order_id
+                                order.action_zippin_create_shipping()
+        return res
