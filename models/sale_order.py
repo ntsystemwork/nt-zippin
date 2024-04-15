@@ -77,7 +77,8 @@ class SaleOrder(models.Model):
             service_type = 'pickup_point'
 
         data = {
-            "external_id": str(self.company_id.zippin_description_web)+'-N-'+str(self.id),
+                #"external_id": str(self.company_id.zippin_description_web)+'-NT-'+str(self.id),
+            "external_id": str(self.company_id.zippin_description_web)+'NT'+str(self.id),
             "account_id": self.company_id.zippin_id,
             "origin_id": self._zippin_get_origen_id(),
             "service_type": service_type,
@@ -101,6 +102,7 @@ class SaleOrder(models.Model):
         }
         log_id = self.env['zippin.log'].create(vals_log)
         self.env.cr.commit()
+        import pdb;pdb.set_trace()
 
         if r.status_code < 400:
             
