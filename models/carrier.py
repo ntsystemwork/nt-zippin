@@ -28,11 +28,22 @@ class DeliveryCarrier(models.Model):
                             "classification_id": 1
                             }
                         r.append(product_list)
-            else:
-                bom = bom_line.product_id.bom_ids[0]
-                if bom.type == 'phantom':
-                    qty = qty * bom_line.product_qty
-                    r = self._get_product_list(bom,r,qty)
+            elif bom_line.product_id.bom_ids[0].type == 'normal':
+                for i in range(int(qty * bom_line.product_qty)):
+                    product_list = {
+                        "weight": bom_line.product_id.weight * 1000,
+                        "height": bom_line.product_id.product_height,
+                        "width": bom_line.product_id.product_width,
+                        "length": bom_line.product_id.product_length,
+                        "description": bom_line.product_id.name,
+                        "classification_id": 1
+                        }
+                    r.append(product_list)
+            #else:
+            #    bom = bom_line.product_id.bom_ids[0]
+            #    if bom.type == 'phantom':
+            #        qty = qty * bom_line.product_qty
+            #        r = self._get_product_list(bom,r,qty)
         return r
 
     def _zippin_prepare_items(self,order):
