@@ -103,7 +103,6 @@ class SaleOrder(models.Model):
         }
         log_id = self.env['zippin.log'].create(vals_log)
         self.env.cr.commit()
-        import pdb;pdb.set_trace()
 
         if r.status_code < 400:
             
