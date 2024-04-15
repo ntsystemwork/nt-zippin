@@ -32,8 +32,9 @@ class SaleOrder(models.Model):
                     r.append(product_list)
             else:
                 bom = bom_line.product_id.bom_ids[0]
-                qty = qty * bom_line.product_qty
-                r = self._get_product_list(bom,r,qty)
+                if bom.type == 'phantom':
+                    qty = qty * bom_line.product_qty
+                    r = self._get_product_list(bom,r,qty)
         return r
 
     def _zippin_prepare_items(self):
@@ -58,7 +59,7 @@ class SaleOrder(models.Model):
                         }
                         r.append(product_list)
                 elif p.product_id.bom_ids:
-                    for bom in p.product_id.bom_ids:
+                    for bom in p.product_id.bom_ids.filtered(lambda b: b.type == 'phantom'):
                         r = self._get_product_list(bom,r,p.product_uom_qty)
         return(r)
 
