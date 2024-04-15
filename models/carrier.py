@@ -8,6 +8,15 @@ from datetime import date,datetime
 class DeliveryCarrier(models.Model):
     _inherit = 'delivery.carrier'
 
+    def zippin_send_shipping(self, pickings):
+        res = []
+        for p in pickings:
+            res = res + [{'exact_price': 0,
+                          'tracking_number': False}]
+        return res
+
+
+
     def _get_product_list(self,bom,r,qty):
         for bom_line in bom.bom_line_ids:
             if (bom_line.product_id.weight == False \
