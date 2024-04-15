@@ -69,7 +69,7 @@ class DeliveryCarrier(models.Model):
                             }
                             r.append(product_list)
                 else:
-                    for bom in p.product_id.bom_ids.filtered(lambda b: b.type == 'phantom'):
+                    for bom in p.product_id.bom_ids[0]:
                         r = self._get_product_list(bom,r,p.product_uom_qty)
         return(r)
 
