@@ -8,6 +8,8 @@ from datetime import date,datetime
 class DeliveryCarrier(models.Model):
     _inherit = 'delivery.carrier'
 
+    is_free = fields.Boolean('Es gratis?')
+
     def zippin_send_shipping(self, pickings):
         res = []
         for p in pickings:

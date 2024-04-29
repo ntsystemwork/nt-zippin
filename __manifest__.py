@@ -15,7 +15,7 @@
     'category': 'Sales',
     'version': '0.1',
 
-    'depends': ['zippin'],
+    'depends': ['zippin','delivery'],
 
     'data': [
         'security/ir.model.access.csv',

@@ -175,3 +175,15 @@ class SaleOrder(models.Model):
                                 order = order_line.order_id
                                 order.action_zippin_create_shipping()
         return res
+
+class SaleOrderLine(models.Model):
+    _inherit = 'sale.order.line'
+
+    @api.model
+    def create(self, vals):
+        if 'product_id' in vals:
+            product_id = vals.get('product_id')
+            delivery = self.env['delivery.carrier'].search([('product_id','=',product_id),('is_free','=',True)])
+            if delivery:
+                vals['price_unit'] = 0
+        return super(SaleOrderLine, self).create(vals)
