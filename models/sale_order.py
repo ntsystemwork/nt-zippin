@@ -9,6 +9,7 @@ class SaleOrder(models.Model):
     _inherit = 'sale.order'
 
     zippin_log_ids = fields.One2many(comodel_name='zippin.log',inverse_name='order_id',string='Logs')
+    zippin_estimated_delivery_time = fields.Char('Decha de entrega estimada Zippin')
 
     def _get_product_list(self,bom,r,qty):
         for bom_line in bom.bom_line_ids:
@@ -127,6 +128,7 @@ class SaleOrder(models.Model):
             self.zippin_create_shipping_view = True
             self.zippin_create_label_view = False
             self.zippin_delete_shipping_view = False
+            self.zippin_estimated_delivery_time = r.get('delivery_time') and r.get('delivery_time').get('estimated_delivery','') or ''
 
         else:
             r= r.json()
