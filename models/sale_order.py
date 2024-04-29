@@ -185,5 +185,5 @@ class SaleOrderLine(models.Model):
             product_id = vals.get('product_id')
             delivery = self.env['delivery.carrier'].search([('product_id','=',product_id),('is_free','=',True)])
             if delivery:
-                vals['price_unit'] = 0
+                vals['discount'] = 100
         return super(SaleOrderLine, self).create(vals)
