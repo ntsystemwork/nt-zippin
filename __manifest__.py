@@ -15,11 +15,12 @@
     'category': 'Sales',
     'version': '0.1',
 
-    'depends': ['zippin','delivery'],
+    'depends': ['zippin','delivery','account'],
 
     'data': [
         'security/ir.model.access.csv',
         'views/sale_view.xml',
+        'views/account_move_view.xml',
     ],
     'assets': {
     },

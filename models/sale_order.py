@@ -11,6 +11,12 @@ class SaleOrder(models.Model):
     zippin_log_ids = fields.One2many(comodel_name='zippin.log',inverse_name='order_id',string='Logs')
     zippin_estimated_delivery_time = fields.Char('Decha de entrega estimada Zippin')
 
+    def _prepare_invoice(self):
+        res = super(SaleOrder, self)._prepare_invoice()
+        if self.zippin_shipping_tracking_external:
+            res['zippin_shipping_tracking_external'] = self.zippin_shipping_tracking_external
+        return res
+
     def _get_product_list(self,bom,r,qty):
         for bom_line in bom.bom_line_ids:
             if (bom_line.product_id.weight == False \
