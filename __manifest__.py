@@ -11,12 +11,9 @@
 
     'author': "InfotecLaPlata",
     'website': "https://www.InfotecLaPlata.com.ar",
-
     'category': 'Sales',
-    'version': '0.1',
-
+    'version': '16.0.2',
     'depends': ['zippin','delivery','account','stock'],
-
     'data': [
         'security/ir.model.access.csv',
         'views/sale_view.xml',
