@@ -19,7 +19,7 @@
         <field name="inherit_id" ref="sale.view_order_form" ></field>
 	<field name="arch" type="xml">
 		<xpath expr="//notebook" position="inside">
-			<page string="Log Zipping">
+			<page string="Log Zipping" groups="base.group_no_one">
 				<br />
 				<group>
 					<field name="zippin_log_ids" readonly="1" >
