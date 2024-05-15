@@ -9,7 +9,26 @@ class SaleOrder(models.Model):
     _inherit = 'sale.order'
 
     zippin_log_ids = fields.One2many(comodel_name='zippin.log',inverse_name='order_id',string='Logs')
-    zippin_estimated_delivery_time = fields.Char('Decha de entrega estimada Zippin')
+    zippin_estimated_delivery_time = fields.Char('Fecha de entrega estimada Zippin',copy= False)
+
+    zippin_pickup_order_id = fields.Char(string="ID Orden",copy=False)
+    zippin_pickup_carrier_id = fields.Char(string="ID Proveedor",copy=False)
+    zippin_pickup_is_pickup = fields.Boolean(string="¿Es envio a Sucursal?",copy=False)
+    zippin_pickup_point_id = fields.Char(string="ID Sucursal",copy=False)
+    zippin_pickup_name = fields.Char(string="Nombre/Descripcion",copy=False)
+    zippin_pickup_address = fields.Char(string="Direccion",copy=False)
+    zippin_logistic_type = fields.Char(copy=False)
+
+    zippin_shipping_id = fields.Char(copy=False)
+    zippin_shipping_delivery_id = fields.Char(copy=False)
+    zippin_shipping_carrier_tracking_id = fields.Char(copy=False)
+    zippin_shipping_carrier_tracking_id_alt = fields.Char(copy=False)
+    zippin_shipping_tracking = fields.Char(copy=False)
+    zippin_shipping_tracking_external = fields.Char(copy=False)
+    zippin_create_shipping_view = fields.Boolean(default='True',copy=False)
+    zippin_create_label_view = fields.Boolean(default='True',copy=False)
+    zippin_shipping_label_bin = fields.Binary(copy=False)
+    zippin_shipping_label_filename = fields.Char(compute='_compute_shipping_label_filename')
 
     def _prepare_invoice(self):
         res = super(SaleOrder, self)._prepare_invoice()
@@ -134,7 +153,7 @@ class SaleOrder(models.Model):
             self.zippin_create_shipping_view = True
             self.zippin_create_label_view = False
             self.zippin_delete_shipping_view = False
-            self.zippin_estimated_delivery_time = r.get('delivery_time') and r.get('delivery_time').get('estimated_delivery','') or ''
+            self.zippin_estimated_delivery_time = r.get('delivery_time') and r.get('delivery_time').get('estimated_delivery','')[:10] or ''
 
         else:
             r= r.json()
