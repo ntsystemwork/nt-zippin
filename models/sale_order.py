@@ -211,6 +211,19 @@ class SaleOrderLine(models.Model):
         if 'product_id' in vals:
             product_id = vals.get('product_id')
             delivery = self.env['delivery.carrier'].search([('product_id','=',product_id),('is_free','=',True)])
-            if delivery:
-                vals['discount'] = 100
-        return super(SaleOrderLine, self).create(vals)
+            #if delivery:
+            #    vals['discount'] = 100
+        res = super(SaleOrderLine, self).create(vals)
+        if 'product_id' in vals and delivery:
+            if res.product_id.property_account_income_id.id != self.env.ref('l10n_ar.1_base_prevision_gastos').id:
+                raise ValidationError('Cuenta de Zippin mal configurada')
+            vals_line = {
+                    'order_id': vals.get('order_id'),
+                    'product_id': self.env.ref('nt-zippin.zippin_delivery_refund').id,
+                    'name': self.env.ref('nt-zippin.zippin_delivery_refund').name,
+                    'price_unit': vals.get('price_unit') * (-1),
+                    'product_uom_qty': 1,
+                    'product_uom': self.env.ref('nt-zippin.zippin_delivery_refund').uom_id.id,
+                    }
+            result = super(SaleOrderLine, self).create(vals_line)
+        return res
