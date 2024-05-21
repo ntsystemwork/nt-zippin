@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+	<data noupdate="1">
+
+		<record id="zippin_bonificacion_envio" model="account.account">
+			<field name="name">Bonificación envios a clientes</field>
+			<field name="code">5.1.2.01.140</field>
+			<field name="account_type">expense</field>
+			<field name="reconcile">False</field>
+		</record>
+
+	        <record id="zippin_delivery_refund" model="product.product">
+        	    <field name="name">Bonificación Envio</field>
+        	    <field name="type">service</field>
+	            <field name="categ_id" ref="delivery.product_category_deliveries"/>
+        	    <field name="sale_ok" eval="False"/>
+	            <field name="purchase_ok" eval="False"/>
+        	    <field name="list_price">0.0</field>
+		    <field name="invoice_policy">order</field>
+		    <field name="property_account_expense_id" ref="nt-zippin.zippin_bonificacion_envio"></field>
+		    <field name="property_account_income_id" ref="nt-zippin.zippin_bonificacion_envio"></field>
+	    </record>
+
+
+	</data>
+</odoo>
