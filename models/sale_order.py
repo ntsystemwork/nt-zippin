@@ -30,6 +30,12 @@ class SaleOrder(models.Model):
     zippin_shipping_label_bin = fields.Binary(copy=False)
     zippin_shipping_label_filename = fields.Char(compute='_compute_shipping_label_filename')
 
+    def action_open_delivery_wizard(self):
+        for rec in self:
+            if rec.state not in ['draft','sent']:
+                raise ValidationError('Accion deshabilitada para el estado %s'%(rec.state))
+        return super(SaleOrder, self).action_open_delivery_wizard()
+
     def _prepare_invoice(self):
         res = super(SaleOrder, self)._prepare_invoice()
         if self.zippin_shipping_tracking_external:
