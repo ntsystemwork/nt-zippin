@@ -23,7 +23,8 @@ class StockPicking(models.Model):
                 zippin_shipping_carrier_tracking_id_alt = rec.sale_id.zippin_shipping_carrier_tracking_id_alt
                 zippin_shipping_tracking = rec.sale_id.zippin_shipping_tracking
                 zippin_shipping_tracking_external = rec.sale_id.zippin_shipping_tracking_external
-                zippin_estimated_delivery_time = rec.zippin_estimated_delivery_time[:10]
+                if rec.zippin_estimated_delivery_time:
+                    zippin_estimated_delivery_time = rec.zippin_estimated_delivery_time[:10]
             rec.zippin_shipping_id = zippin_shipping_id
             rec.zippin_shipping_delivery_id = zippin_shipping_delivery_id
             rec.zippin_shipping_carrier_tracking_id = zippin_shipping_carrier_tracking_id
