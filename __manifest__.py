@@ -13,13 +13,14 @@
     'website': "https://www.InfotecLaPlata.com.ar",
     'category': 'Sales',
     'version': '16.0.4',
-    'depends': ['zippin','delivery','account','stock','base','l10n_ar'],
+    'depends': ['zippin','delivery','account','stock','base','l10n_ar', 'mrp'],
     'data': [
         'data/zippin_data.xml',
         'security/ir.model.access.csv',
         'views/sale_view.xml',
         'views/account_move_view.xml',
         'views/stock_picking_view.xml',
+        'views/view_address_form.xml',
     ],
     'assets': {
     },

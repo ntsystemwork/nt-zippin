@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+        <template id="address_form_inherited" inherit_id="website_sale.address">
+
+            <xpath expr="//label[@for='street']" position="replace">
+                <label class="col-form-label label-optional" for="street"><strong>Nombre de calle</strong></label>
+            </xpath>
+
+            <xpath expr="//label[@for='street2']" position="replace">
+                <label class="col-form-label label-optional" for="street2"><strong>Número de calle</strong></label>
+            </xpath>
+
+            <xpath expr="//label[@for='email']" position="replace">
+                <label class="col-form-label label-optional" for="email"><strong>Correo electrónico</strong></label>
+            </xpath>
+
+            <!--xpath expr="//label[@name='street']" position="attributes">
+                <attribute name="placeholder">Nombre de calle</attribute>
+                <attribute name="required">true</attribute>
+            </xpath>
+            <xpath expr="//input[@name='street2']" position="attributes">
+                <attribute name="invisible">true</attribute>
+            </xpath-->
+        </template>
+    </data>
+</odoo>
+

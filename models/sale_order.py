@@ -73,11 +73,12 @@ class SaleOrder(models.Model):
                         "classification_id": 1
                         }
                     r.append(product_list)
-            #else:
+            # else:
             #    bom = bom_line.product_id.bom_ids[0]
             #    if bom.type == 'phantom':
             #        qty = qty * bom_line.product_qty
             #        r = self._get_product_list(bom,r,qty)
+                   
         return r
 
     def _zippin_prepare_items(self):

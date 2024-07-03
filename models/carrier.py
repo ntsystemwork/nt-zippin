@@ -4,6 +4,10 @@ from odoo.addons.zippin.models.delivery_carrier import ID_CORREO_ARGENTINO, ID_O
 from requests.structures import CaseInsensitiveDict
 import requests, base64
 from datetime import date,datetime
+import logging
+_logger = logging.getLogger(__name__)
+
+
 
 class DeliveryCarrier(models.Model):
     _inherit = 'delivery.carrier'
@@ -66,6 +70,9 @@ class DeliveryCarrier(models.Model):
                             or p.product_id.product_height == False \
                             or p.product_id.product_width == False \
                             or p.product_id.product_length == False):
+                        _logger.error(f'{p.product_id.weight} {p.product_id.product_height} {p.product_id.product_width} {p.product_id.product_length}')
+                        #raise ValidationError(f'{p.product_id.weight} {p.product_id.product_height} {p.product_id.product_width} {p.product_id.product_length}')
+                        
                         raise ValidationError('#4 Error: El producto ' + p.product_id.name + ' debe tener peso y tamaño asignados.')
 
                     for i in range(int(p.product_uom_qty)):
@@ -175,6 +182,7 @@ class DeliveryCarrier(models.Model):
             }
         else:
             data = r.json()
+            raise ValidationError(str(data))
             return {
                 'success': False,
                 'price': 0,
