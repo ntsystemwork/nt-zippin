@@ -122,15 +122,27 @@ class DeliveryCarrier(models.Model):
             pickup_address = ''
             logistic_type = ''
 
+            shipment_price = 99999999
+            shipment_type = 208
+            
             for i in r["all_results"]:
+                
+                # Hito_Ale: refactorizamos esta sección para que no tenga en cuenta shipping_type y obtenga el valor mas ba jo
+                # de amounts->price de cada carriers informado en el response de la API de zippin
+                                
                 if self.zippin_shipment_type_is_pickup:
-                    if i["carrier"]["id"] == int(self.zippin_shipment_type) and i["service_type"]["id"] == ID_PICKUP_DELIVERY:
-                        shipment_price = i["amounts"]["price"]
-                        logistic_type = i["logistic_type"]
+                    if (i["carrier"]["id"] == int(self.zippin_shipment_type) or True) and i["service_type"]["id"] == ID_PICKUP_DELIVERY:
+                        if i["amounts"]["price"] < shipment_price and i["amounts"]["price"] > 0:
+                            shipment_price = i["amounts"]["price"]
+                            logistic_type = i["logistic_type"]
+                            shipment_type = i["carrier"]["id"]
                 else:
-                    if i["carrier"]["id"] == int(self.zippin_shipment_type) and i["service_type"]["id"] == ID_STANDARD_DELIVERY:
-                        shipment_price = i["amounts"]["price"]
-                        logistic_type = i["logistic_type"]
+                    if (i["carrier"]["id"] == int(self.zippin_shipment_type) or True) and i["service_type"]["id"] == ID_STANDARD_DELIVERY:
+                        if i["amounts"]["price"] < shipment_price and i["amounts"]["price"] > 0:
+                            shipment_price = i["amounts"]["price"]
+                            logistic_type = i["logistic_type"]
+                            shipment_type = i["carrier"]["id"]
+                            
 
                 if i["service_type"]["id"] == ID_PICKUP_DELIVERY:
                     for f in i["pickup_points"]:
@@ -149,7 +161,8 @@ class DeliveryCarrier(models.Model):
                 'zippin_pickup': pickup_res,
                 'logistic_type': logistic_type,
                 'error_message': False,
-                'warning_message': False
+                'warning_message': False,
+                'shipment_type': shipment_type
             }
 
         elif r.status_code == 408:
