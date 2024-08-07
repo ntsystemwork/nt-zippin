@@ -3,7 +3,10 @@ from odoo.exceptions import ValidationError
 from odoo.addons.zippin.models.delivery_carrier import ID_CORREO_ARGENTINO, ID_OCA, ID_ANDREANI, APIURL, ID_PICKUP_DELIVERY, ID_STANDARD_DELIVERY
 from requests.structures import CaseInsensitiveDict
 import requests, base64
-from datetime import date,datetime
+from datetime import date, datetime
+
+import logging
+_logger = logging.getLogger(__name__)
 
 class DeliveryCarrier(models.Model):
     _inherit = 'delivery.carrier'
@@ -134,12 +137,12 @@ class DeliveryCarrier(models.Model):
                             shipment_price = i["amounts"]["price"]
                             logistic_type = i["logistic_type"]
                             shipment_type = i["carrier"]["id"]
-                else:
-                    if i["service_type"]["id"] == ID_STANDARD_DELIVERY: #(i["carrier"]["id"] == int(self.zippin_shipment_type) or True) and 
-                        if i["amounts"]["price"] < shipment_price and i["amounts"]["price"] > 0:
-                            shipment_price = i["amounts"]["price"]
-                            logistic_type = i["logistic_type"]
-                            shipment_type = i["carrier"]["id"]
+                # else:
+                if i["service_type"]["id"] == ID_STANDARD_DELIVERY: #(i["carrier"]["id"] == int(self.zippin_shipment_type) or True) and 
+                    if i["amounts"]["price"] < shipment_price and i["amounts"]["price"] > 0:
+                        shipment_price = i["amounts"]["price"]
+                        logistic_type = i["logistic_type"]
+                        shipment_type = i["carrier"]["id"]
                             
 
                 if i["service_type"]["id"] == ID_PICKUP_DELIVERY:
@@ -186,11 +189,11 @@ class DeliveryCarrier(models.Model):
             }
         else:
             data = r.json()
-            raise ValidationError(data)
+            _logger.error(str(data))
             return {
                 'success': False,
                 'price': 0,
-                'error_message': 'No disponible',
+                'error_message': 'No disponible, revisar el log',
                 'warning_message': False
             }
             
