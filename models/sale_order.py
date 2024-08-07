@@ -30,6 +30,52 @@ class SaleOrder(models.Model):
     zippin_shipping_label_bin = fields.Binary(copy=False)
     zippin_shipping_label_filename = fields.Char(compute='_compute_shipping_label_filename')
 
+
+
+    def _check_carrier_quotation(self, force_carrier_id=None, keep_carrier=False):
+        
+        res = super(SaleOrder, self)._check_carrier_quotation(force_carrier_id=None,keep_carrier=keep_carrier)
+
+        zp_DeliveryCarrier = self.env['delivery.carrier']
+        if self.only_services == False:
+            zp_carrier = force_carrier_id and zp_DeliveryCarrier.browse(force_carrier_id) or self.carrier_id
+            if zp_carrier:
+                zp_res = zp_carrier.rate_shipment(self)
+                if zp_res.get('success'):
+                    self.env['zippin.shipping'].search([]).unlink()
+                    self.set_delivery_line(zp_carrier, zp_res['price'])
+                    self.delivery_rating_success = True
+                    if self.carrier_id.zippin_shipment_type:
+                        self.env['zippin.shipping'].create(zp_res['zippin_pickup'])
+                        self.zippin_logistic_type = zp_res['logistic_type']
+                    self.delivery_message = zp_res['warning_message']
+                    self.zippin_pickup_order_id = self._origin.id
+                    self.zippin_pickup_carrier_id = self.carrier_id.zippin_shipment_type
+                    if self.carrier_id.zippin_shipment_type_is_pickup:
+                        self.zippin_pickup_is_pickup = True
+                    else: 
+                        self.zippin_pickup_is_pickup = False
+        return res
+
+
+
+
+    @api.depends('zippin_shipping_label_bin')
+    def _compute_shipping_label_filename(self):
+        self.ensure_one()
+        name = ''
+        if self.zippin_shipping_id:
+            name = self.zippin_shipping_id
+        name = name.replace('/', '_')
+        name = name.replace('.', '_')
+        name = name + '.pdf'
+        self.zippin_shipping_label_filename = name
+
+
+
+
+
+
     def action_open_delivery_wizard(self):
         for rec in self:
             if rec.state not in ['draft','sent']:
@@ -51,6 +97,7 @@ class SaleOrder(models.Model):
                 and bom_line.product_id.type == 'product' \
                 and not bom_line.product_id.bom_ids:
                 raise ValidationError('#5 Error: El producto ' + bom_line.product_id.name + ' debe tener peso y tamaño asignados.')
+            
             if not bom_line.product_id.bom_ids:
                 for i in range(int(qty * bom_line.product_qty)):
                     product_list = {
@@ -73,6 +120,8 @@ class SaleOrder(models.Model):
                         "classification_id": 1
                         }
                     r.append(product_list)
+            else:
+                raise ValidationError('_get_product_list')
             #else:
             #    bom = bom_line.product_id.bom_ids[0]
             #    if bom.type == 'phantom':
@@ -81,6 +130,7 @@ class SaleOrder(models.Model):
         return r
 
     def _zippin_prepare_items(self):
+        r = []
         if self.order_line:
             r = []
             for p in self.order_line:
@@ -106,6 +156,75 @@ class SaleOrder(models.Model):
                         r = self._get_product_list(bom,r,p.product_uom_qty)
         return(r)
 
+
+
+    def _zippin_api_headers(self):
+
+        headers = CaseInsensitiveDict()
+        headers["Content-Type"] = "application/json"
+        headers["Accept"] = "application/json"
+
+        zippin_auth = "%s:%s" % (self.company_id.zippin_key, self.company_id.zippin_secret)
+        zippin_auth = base64.b64encode(zippin_auth.encode("utf-8")).decode("utf-8")
+
+        headers["Authorization"] = "Basic " + zippin_auth
+
+        return(headers)
+
+    def _zippin_get_origen_id(self):
+
+        url = APIURL + "/addresses?account_id=" + self.company_id.zippin_id
+
+        r = requests.get(url, headers=self._zippin_api_headers())
+
+        if r.status_code == 403:
+            raise ValidationError('Zippin: Error de autorización, revise sus credenciales.')
+        else:
+            r = r.json()
+            for i in r["data"]:
+                if i["id"]:
+                   resp = i["id"]
+            return(resp)
+
+
+
+    def _zippin_to_shipping_data(self):
+
+        if self.partner_shipping_id.city == False:
+            raise ValidationError('¡El Cliente debe tener Ciudad!')
+        elif self.partner_shipping_id.state_id.name == False:
+            raise ValidationError('¡El Cliente debe tener Estado/Provincia!')
+        elif self.partner_shipping_id.zip == False:
+            raise ValidationError('¡El Cliente debe tener Codigo Postal!')
+        else:
+            zp_phone = ''
+            if self.partner_shipping_id.phone:
+                zp_phone = zp_phone + self.partner_shipping_id.phone
+            elif self.partner_shipping_id.mobile:
+                zp_phone = ' - ' + self.partner_shipping_id.mobile
+
+            if self.zippin_pickup_is_pickup:
+                r = {
+                    "name": self.partner_shipping_id.name,
+                    "document": self.partner_shipping_id.vat,
+                    "phone": zp_phone,
+                    "email": self.partner_shipping_id.email,
+                    "point_id": int(self.zippin_pickup_point_id),
+                }
+            else: 
+                r = {
+                    "city": self.partner_shipping_id.city,
+                    "state": self.partner_shipping_id.state_id.name,
+                    "zipcode": self.partner_shipping_id.zip,
+                    "name": self.partner_shipping_id.name,
+                    "document": self.partner_shipping_id.vat,
+                    "street": self.partner_shipping_id.street,
+                    "street_number": self.partner_shipping_id.street2,
+                    "street_extras": '',
+                    "phone": zp_phone,
+                    "email": self.partner_shipping_id.email,
+                }
+        return(r)
 
 
     def action_zippin_create_shipping(self):
@@ -166,6 +285,42 @@ class SaleOrder(models.Model):
             raise ValidationError('Zippin Error: ' +r["message"]+'\n %s'%(r.get('error')))
 
 
+    def action_zippin_delete_shipping(self):
+
+        url = APIURL + "/shipments/" + self.zippin_shipping_id +"/cancel"
+        r = requests.post(url, headers=self._zippin_api_headers())
+
+        if r.status_code == 200:
+            r = r.json()
+            self.delete_zippin_shipping()
+        elif r.status_code == 401:
+            raise ValidationError('Zippin: Error, no se pudo cancelar el envío')
+        else:
+            raise ValidationError(r.status_code)
+
+
+
+    def delete_zippin_shipping(self):
+
+        self.zippin_shipping_label_bin = None
+        self.zippin_pickup_order_id = None
+        self.zippin_pickup_carrier_id = None
+        self.zippin_pickup_is_pickup = None
+        self.zippin_pickup_point_id = None 
+        self.zippin_pickup_name = None 
+        self.zippin_pickup_address = None 
+        self.zippin_logistic_type = None 
+        self.zippin_shipping_id = None 
+        self.zippin_shipping_delivery_id = None 
+        self.zippin_shipping_carrier_tracking_id = None 
+        self.zippin_shipping_carrier_tracking_id_alt = None 
+        self.zippin_shipping_tracking = None 
+        self.zippin_shipping_tracking_external = None 
+        self.zippin_create_shipping_view = True
+        self.zippin_create_label_view = True
+        self.zippin_delete_shipping_view = True
+
+
 
     def action_zippin_get_label(self):
         if not self.zippin_shipping_id:
@@ -209,27 +364,70 @@ class SaleOrder(models.Model):
                                 order.action_zippin_create_shipping()
         return res
 
-class SaleOrderLine(models.Model):
-    _inherit = 'sale.order.line'
+# class SaleOrderLine(models.Model):
+#     _inherit = 'sale.order.line'
 
-    @api.model
-    def create(self, vals):
-        if 'product_id' in vals:
-            product_id = vals.get('product_id')
-            delivery = self.env['delivery.carrier'].search([('product_id','=',product_id),('is_free','=',True)])
-            #if delivery:
-            #    vals['discount'] = 100
-        res = super(SaleOrderLine, self).create(vals)
-        if 'product_id' in vals and delivery:
-            #if res.product_id.property_account_income_id.id != self.env.ref('l10n_ar.1_base_prevision_gastos').id:
-            #    raise ValidationError('Cuenta de Zippin mal configurada')
-            vals_line = {
-                    'order_id': vals.get('order_id'),
-                    'product_id': self.env.ref('nt-zippin.zippin_delivery_refund').id,
-                    'name': self.env.ref('nt-zippin.zippin_delivery_refund').name,
-                    'price_unit': vals.get('price_unit') * (-1),
-                    'product_uom_qty': 1,
-                    'product_uom': self.env.ref('nt-zippin.zippin_delivery_refund').uom_id.id,
-                    }
-            result = super(SaleOrderLine, self).create(vals_line)
-        return res
+#     @api.model
+#     def create(self, vals):
+#         if 'product_id' in vals:
+#             product_id = vals.get('product_id')
+#             delivery = self.env['delivery.carrier'].search([('product_id','=',product_id),('is_free','=',True)])
+#             #if delivery:
+#             #    vals['discount'] = 100
+#         res = super(SaleOrderLine, self).create(vals)
+#         if 'product_id' in vals and delivery:
+#             #if res.product_id.property_account_income_id.id != self.env.ref('l10n_ar.1_base_prevision_gastos').id:
+#             #    raise ValidationError('Cuenta de Zippin mal configurada')
+#             vals_line = {
+#                     'order_id': vals.get('order_id'),
+#                     'product_id': self.env.ref('nt-zippin.zippin_delivery_refund').id,
+#                     'name': self.env.ref('nt-zippin.zippin_delivery_refund').name,
+#                     'price_unit': vals.get('price_unit') * (-1),
+#                     'product_uom_qty': 1,
+#                     'product_uom': self.env.ref('nt-zippin.zippin_delivery_refund').uom_id.id,
+#                     }
+#             result = super(SaleOrderLine, self).create(vals_line)
+#         return res
+
+
+#     def delete_pickup_points(self):
+#         res = self.env['zippin.shipping'].search([('order_id','=', int(self.order_id.id))]).unlink()
+#         return(res)
+
+#     def delete_zippin_shipping(self):
+#         self.order_id.zippin_shipping_label_bin = None
+#         self.order_id.zippin_pickup_order_id = None
+#         self.order_id.zippin_pickup_carrier_id = None
+#         self.order_id.zippin_pickup_is_pickup = None
+#         self.order_id.zippin_pickup_point_id = None 
+#         self.order_id.zippin_pickup_name = None 
+#         self.order_id.zippin_pickup_address = None 
+#         self.order_id.zippin_logistic_type = None 
+#         self.order_id.zippin_shipping_id = None 
+#         self.order_id.zippin_shipping_delivery_id = None 
+#         self.order_id.zippin_shipping_carrier_tracking_id = None 
+#         self.order_id.zippin_shipping_carrier_tracking_id_alt = None 
+#         self.order_id.zippin_shipping_tracking = None 
+#         self.order_id.zippin_shipping_tracking_external = None 
+#         self.order_id.zippin_create_shipping_view = True
+#         self.order_id.zippin_create_label_view = True
+#         self.order_id.zippin_delete_shipping_view = True
+
+#     #Borra la informacion de envio cuando aun no se generó la etiqueta de envio.
+#     def delete_zippin_info(self):
+#         if self.order_id.zippin_shipping_id:
+#             raise ValidationError('No se puede borrar o actualizar un envío ya creado, primero cancele el envio.')
+#         else:
+#             self.delete_zippin_shipping()
+
+#     #Modifico la funcion unlink para que borre sucursales e informacion de envio en sale.order
+#     def unlink(self):
+#         for line in self:
+#             if line.is_delivery:
+#                 self.delete_pickup_points()
+#                 self.delete_zippin_info()
+#         res = super(SaleOrderLine, self).unlink()
+#         return res
+
+
+
