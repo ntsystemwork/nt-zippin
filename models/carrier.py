@@ -17,8 +17,6 @@ class DeliveryCarrier(models.Model):
                           'tracking_number': False}]
         return res
 
-
-
     def _get_product_list(self,bom,r,qty):
         for bom_line in bom.bom_line_ids:
             if (bom_line.product_id.weight == False \
@@ -131,13 +129,13 @@ class DeliveryCarrier(models.Model):
                 # de amounts->price de cada carriers informado en el response de la API de zippin
                                 
                 if self.zippin_shipment_type_is_pickup:
-                    if (i["carrier"]["id"] == int(self.zippin_shipment_type) or True) and i["service_type"]["id"] == ID_PICKUP_DELIVERY:
+                    if i["service_type"]["id"] == ID_PICKUP_DELIVERY:# (i["carrier"]["id"] == int(self.zippin_shipment_type) or True) and 
                         if i["amounts"]["price"] < shipment_price and i["amounts"]["price"] > 0:
                             shipment_price = i["amounts"]["price"]
                             logistic_type = i["logistic_type"]
                             shipment_type = i["carrier"]["id"]
                 else:
-                    if (i["carrier"]["id"] == int(self.zippin_shipment_type) or True) and i["service_type"]["id"] == ID_STANDARD_DELIVERY:
+                    if i["service_type"]["id"] == ID_STANDARD_DELIVERY: #(i["carrier"]["id"] == int(self.zippin_shipment_type) or True) and 
                         if i["amounts"]["price"] < shipment_price and i["amounts"]["price"] > 0:
                             shipment_price = i["amounts"]["price"]
                             logistic_type = i["logistic_type"]
@@ -188,9 +186,99 @@ class DeliveryCarrier(models.Model):
             }
         else:
             data = r.json()
+            raise ValidationError(data)
             return {
                 'success': False,
                 'price': 0,
                 'error_message': 'No disponible',
                 'warning_message': False
             }
+            
+            
+            
+    def _zippin_api_headers(self, order):
+
+        headers = CaseInsensitiveDict()
+        headers["Content-Type"] = "application/json"
+        headers["Accept"] = "application/json"
+        
+        zippin_auth = "%s:%s" % (order.company_id.zippin_key, order.company_id.zippin_secret)
+        zippin_auth = base64.b64encode(zippin_auth.encode("utf-8")).decode("utf-8")
+
+        headers["Authorization"] = "Basic " + zippin_auth
+
+        return(headers)
+
+    def _zippin_get_origen_id(self, order):
+
+        url = APIURL + "/addresses?account_id=" + order.company_id.zippin_id
+
+        r = requests.get(url, headers=self._zippin_api_headers(order))
+
+        if r.status_code == 403:
+            raise ValidationError('Zippin: Error de autorización, revise sus credenciales.')
+        else:
+            r = r.json()
+            for i in r["data"]:
+                if i["id"]:
+                   resp = i["id"]
+            return(resp)
+
+    def _zippin_prepare_items(self, order):
+
+        if order.order_line:
+            r = []
+
+            for p in order.order_line:
+                if p.product_type != 'service' and p.product_type != 'consu':
+                    if p.product_id.weight == False or p.product_id.product_height == False or p.product_id.product_width == False or p.product_id.product_length == False:
+                        raise ValidationError('Error: El producto ' + p.product_id.name + ' debe tener peso y tamaño asignados.')
+
+                    for i in range(int(p.product_uom_qty)):
+                        product_list = {
+                          "weight": p.product_id.weight * 1000,
+                          "height": p.product_id.product_height,
+                          "width": p.product_id.product_width,
+                          "length": p.product_id.product_length,
+                          "description": p.product_id.name,
+                          "classification_id": 1
+                        }
+
+                        r.append(product_list)
+
+        return(r)
+
+
+
+
+    def _zippin_to_shipping_data(self, order):
+
+        if order.partner_shipping_id.city == False:
+            raise ValidationError('¡El Cliente debe tener Ciudad!')
+        elif order.partner_shipping_id.state_id.name == False:
+            raise ValidationError('¡El Cliente debe tener Estado/Provincia!')
+        elif order.partner_shipping_id.zip == False:
+            raise ValidationError('¡El Cliente debe tener Codigo Postal!')
+        elif order.partner_shipping_id.street == False:
+            raise ValidationError('¡El Cliente debe tener una calle!')
+        elif order.partner_shipping_id.street2 == False:
+            raise ValidationError('¡El Cliente debe tener un número de calle!')
+        else:
+            zp_phone = ''
+            if order.partner_shipping_id.phone:
+                zp_phone = zp_phone + order.partner_shipping_id.phone
+            elif order.partner_shipping_id.mobile:
+                zp_phone = ' - ' + order.partner_shipping_id.mobile
+            r = {
+                "city": order.partner_shipping_id.city,
+                "state": order.partner_shipping_id.state_id.name,
+                "zipcode": order.partner_shipping_id.zip,
+                "name": order.partner_shipping_id.name,
+                "document": order.partner_shipping_id.vat,
+                "street": order.partner_shipping_id.street,
+                "street_number": order.partner_shipping_id.street2,
+                "street_extras": '',
+                "phone": zp_phone,
+                "email": order.partner_shipping_id.email,
+            }
+        return(r)

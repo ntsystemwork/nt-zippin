@@ -3,3 +3,4 @@ from . import carrier
 from . import zippin_log
 from . import account_move
 from . import stock_picking
+from . import sale_order_line
