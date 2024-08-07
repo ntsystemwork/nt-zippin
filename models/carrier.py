@@ -227,33 +227,32 @@ class DeliveryCarrier(models.Model):
                    resp = i["id"]
             return(resp)
 
-    def _zippin_prepare_items(self, order):
+    
+    # def _zippin_prepare_items(self, order):
 
-        if order.order_line:
-            r = []
+    #     if order.order_line:
+    #         r = []
 
-            for p in order.order_line:
-                if p.product_type != 'service' and p.product_type != 'consu':
-                    if p.product_id.weight == False or p.product_id.product_height == False or p.product_id.product_width == False or p.product_id.product_length == False:
-                        raise ValidationError('Error: El producto ' + p.product_id.name + ' debe tener peso y tamaño asignados.')
+    #         for p in order.order_line:
+    #             if p.product_type != 'service' and p.product_type != 'consu':
+    #                 if p.product_id.weight == False or p.product_id.product_height == False or p.product_id.product_width == False or p.product_id.product_length == False:
+    #                     raise ValidationError('Error: El producto ' + p.product_id.name + ' debe tener peso y tamaño asignados.')
 
-                    for i in range(int(p.product_uom_qty)):
-                        product_list = {
-                          "weight": p.product_id.weight * 1000,
-                          "height": p.product_id.product_height,
-                          "width": p.product_id.product_width,
-                          "length": p.product_id.product_length,
-                          "description": p.product_id.name,
-                          "classification_id": 1
-                        }
+    #                 for i in range(int(p.product_uom_qty)):
+    #                     product_list = {
+    #                       "weight": p.product_id.weight * 1000,
+    #                       "height": p.product_id.product_height,
+    #                       "width": p.product_id.product_width,
+    #                       "length": p.product_id.product_length,
+    #                       "description": p.product_id.name,
+    #                       "classification_id": 1
+    #                     }
 
-                        r.append(product_list)
+    #                     r.append(product_list)
 
-        return(r)
+    #     return(r)
 
-
-
-
+    
     def _zippin_to_shipping_data(self, order):
 
         if order.partner_shipping_id.city == False:
