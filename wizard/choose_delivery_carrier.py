@@ -49,16 +49,6 @@ class ChooseDeliveryCarrier(models.TransientModel):
 
     #     return res
 
-    def _get_shipment_rate(self):
-        res = super()._get_shipment_rate()
-        self.delete_pickup_points()
-        if self.carrier_id.zippin_shipment_type:
-            zp_vals = self.carrier_id.rate_shipment(self.order_id)
-            if zp_vals.get('success'):
-                self.zippin_logistic_type = zp_vals['logistic_type']
-                self.env['zippin.shipping'].create(zp_vals['zippin_pickup'])
-        return res
-
     def button_confirm(self):
         res = super().button_confirm()
 
