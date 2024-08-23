@@ -12,7 +12,7 @@
     'author': "InfotecLaPlata",
     'website': "https://www.InfotecLaPlata.com.ar",
     'category': 'Sales',
-    'version': '16.0.4',
+    'version': '16.0.1.2.5',
     'depends': ['zippin','delivery','account','stock','base','l10n_ar'],
     'data': [
         'data/zippin_data.xml',
@@ -20,6 +20,7 @@
         'views/sale_view.xml',
         'views/account_move_view.xml',
         'views/stock_picking_view.xml',
+        'wizard/choose_delivery_carrier_form_view.xml',
     ],
     'assets': {
     },

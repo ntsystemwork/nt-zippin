@@ -12,6 +12,8 @@ class DeliveryCarrier(models.Model):
     _inherit = 'delivery.carrier'
 
     is_free = fields.Boolean('Es gratis?')
+    # zippin_estimated_delivery = fields.Datetime(string='Entrega estimada')
+
 
     def zippin_send_shipping(self, pickings):
         res = []
@@ -19,6 +21,8 @@ class DeliveryCarrier(models.Model):
             res = res + [{'exact_price': 0,
                           'tracking_number': False}]
         return res
+
+
 
     def _get_product_list(self,bom,r,qty):
         for bom_line in bom.bom_line_ids:
@@ -57,6 +61,8 @@ class DeliveryCarrier(models.Model):
             #        qty = qty * bom_line.product_qty
             #        r = self._get_product_list(bom,r,qty)
         return r
+
+
 
     def _zippin_prepare_items(self,order):
         if order.order_line:
@@ -113,6 +119,8 @@ class DeliveryCarrier(models.Model):
             'request': str(data),
             'response': r.text,
         }
+        response = r.json()
+        _logger.error('\n\n'.join([f'{key} ==> {response[key]}' for key in response]))
         log_id = self.env['zippin.log'].create(vals_log)
         self.env.cr.commit()
 
@@ -125,6 +133,7 @@ class DeliveryCarrier(models.Model):
 
             shipment_price = 99999999
             shipment_type = 208
+            estimated_delivery = ''
             
             for i in r["all_results"]:
                 
@@ -137,12 +146,16 @@ class DeliveryCarrier(models.Model):
                             shipment_price = i["amounts"]["price"]
                             logistic_type = i["logistic_type"]
                             shipment_type = i["carrier"]["id"]
+                            estimated_delivery = i['delivery_time']['estimated_delivery']
+                            # raise ValidationError('ID_PICKUP_DELIVERY ' + str(i['delivery_time']['estimated_delivery']))
                 # else:
                 if i["service_type"]["id"] == ID_STANDARD_DELIVERY: #(i["carrier"]["id"] == int(self.zippin_shipment_type) or True) and 
                     if i["amounts"]["price"] < shipment_price and i["amounts"]["price"] > 0:
                         shipment_price = i["amounts"]["price"]
                         logistic_type = i["logistic_type"]
                         shipment_type = i["carrier"]["id"]
+                        estimated_delivery = i['delivery_time']['estimated_delivery']
+                        # raise ValidationError('ID_STANDARD_DELIVERY ' + str(i['delivery_time']['estimated_delivery']))
                             
 
                 if i["service_type"]["id"] == ID_PICKUP_DELIVERY:
@@ -163,7 +176,8 @@ class DeliveryCarrier(models.Model):
                 'logistic_type': logistic_type,
                 'error_message': False,
                 'warning_message': False,
-                'shipment_type': shipment_type
+                'shipment_type': shipment_type,
+                'zippin_estimated_delivery': estimated_delivery
             }
 
         elif r.status_code == 408:
@@ -227,30 +241,6 @@ class DeliveryCarrier(models.Model):
                    resp = i["id"]
             return(resp)
 
-    
-    # def _zippin_prepare_items(self, order):
-
-    #     if order.order_line:
-    #         r = []
-
-    #         for p in order.order_line:
-    #             if p.product_type != 'service' and p.product_type != 'consu':
-    #                 if p.product_id.weight == False or p.product_id.product_height == False or p.product_id.product_width == False or p.product_id.product_length == False:
-    #                     raise ValidationError('Error: El producto ' + p.product_id.name + ' debe tener peso y tamaño asignados.')
-
-    #                 for i in range(int(p.product_uom_qty)):
-    #                     product_list = {
-    #                       "weight": p.product_id.weight * 1000,
-    #                       "height": p.product_id.product_height,
-    #                       "width": p.product_id.product_width,
-    #                       "length": p.product_id.product_length,
-    #                       "description": p.product_id.name,
-    #                       "classification_id": 1
-    #                     }
-
-    #                     r.append(product_list)
-
-    #     return(r)
 
     
     def _zippin_to_shipping_data(self, order):

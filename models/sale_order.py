@@ -30,6 +30,7 @@ class SaleOrder(models.Model):
     zippin_shipping_label_bin = fields.Binary(copy=False)
     zippin_shipping_label_filename = fields.Char(compute='_compute_shipping_label_filename')
 
+    zippin_estimated_delivery = fields.Datetime(string='Entrega estimada')
 
 
     def _check_carrier_quotation(self, force_carrier_id=None, keep_carrier=False):
@@ -53,11 +54,9 @@ class SaleOrder(models.Model):
                     self.zippin_pickup_carrier_id = self.carrier_id.zippin_shipment_type
                     if self.carrier_id.zippin_shipment_type_is_pickup:
                         self.zippin_pickup_is_pickup = True
-                    else: 
+                    else:
                         self.zippin_pickup_is_pickup = False
         return res
-
-
 
 
     @api.depends('zippin_shipping_label_bin')
@@ -72,21 +71,19 @@ class SaleOrder(models.Model):
         self.zippin_shipping_label_filename = name
 
 
-
-
-
-
     def action_open_delivery_wizard(self):
         for rec in self:
             if rec.state not in ['draft','sent']:
                 raise ValidationError('Accion deshabilitada para el estado %s'%(rec.state))
         return super(SaleOrder, self).action_open_delivery_wizard()
 
+
     def _prepare_invoice(self):
         res = super(SaleOrder, self)._prepare_invoice()
         if self.zippin_shipping_tracking_external:
             res['zippin_shipping_tracking_external'] = self.zippin_shipping_tracking_external
         return res
+
 
     def _get_product_list(self,bom,r,qty):
         for bom_line in bom.bom_line_ids:
@@ -129,6 +126,7 @@ class SaleOrder(models.Model):
             #        r = self._get_product_list(bom,r,qty)
         return r
 
+
     def _zippin_prepare_items(self):
         r = []
         if self.order_line:
@@ -157,7 +155,6 @@ class SaleOrder(models.Model):
         return(r)
 
 
-
     def _zippin_api_headers(self):
 
         headers = CaseInsensitiveDict()
@@ -170,6 +167,7 @@ class SaleOrder(models.Model):
         headers["Authorization"] = "Basic " + zippin_auth
 
         return(headers)
+
 
     def _zippin_get_origen_id(self):
 
@@ -185,7 +183,6 @@ class SaleOrder(models.Model):
                 if i["id"]:
                    resp = i["id"]
             return(resp)
-
 
 
     def _zippin_to_shipping_data(self):
@@ -299,7 +296,6 @@ class SaleOrder(models.Model):
             raise ValidationError(r.status_code)
 
 
-
     def delete_zippin_shipping(self):
 
         self.zippin_shipping_label_bin = None
@@ -319,7 +315,6 @@ class SaleOrder(models.Model):
         self.zippin_create_shipping_view = True
         self.zippin_create_label_view = True
         self.zippin_delete_shipping_view = True
-
 
 
     def action_zippin_get_label(self):
@@ -350,7 +345,6 @@ class SaleOrder(models.Model):
                 raise ValidationError('La etiqueta no esta disponible aun. Intente en un momento')
 
 
-
     def write(self, vals):
         res = super(SaleOrder, self).write(vals)
         for rec in self:
@@ -363,71 +357,4 @@ class SaleOrder(models.Model):
                                 order = order_line.order_id
                                 order.action_zippin_create_shipping()
         return res
-
-# class SaleOrderLine(models.Model):
-#     _inherit = 'sale.order.line'
-
-#     @api.model
-#     def create(self, vals):
-#         if 'product_id' in vals:
-#             product_id = vals.get('product_id')
-#             delivery = self.env['delivery.carrier'].search([('product_id','=',product_id),('is_free','=',True)])
-#             #if delivery:
-#             #    vals['discount'] = 100
-#         res = super(SaleOrderLine, self).create(vals)
-#         if 'product_id' in vals and delivery:
-#             #if res.product_id.property_account_income_id.id != self.env.ref('l10n_ar.1_base_prevision_gastos').id:
-#             #    raise ValidationError('Cuenta de Zippin mal configurada')
-#             vals_line = {
-#                     'order_id': vals.get('order_id'),
-#                     'product_id': self.env.ref('nt-zippin.zippin_delivery_refund').id,
-#                     'name': self.env.ref('nt-zippin.zippin_delivery_refund').name,
-#                     'price_unit': vals.get('price_unit') * (-1),
-#                     'product_uom_qty': 1,
-#                     'product_uom': self.env.ref('nt-zippin.zippin_delivery_refund').uom_id.id,
-#                     }
-#             result = super(SaleOrderLine, self).create(vals_line)
-#         return res
-
-
-#     def delete_pickup_points(self):
-#         res = self.env['zippin.shipping'].search([('order_id','=', int(self.order_id.id))]).unlink()
-#         return(res)
-
-#     def delete_zippin_shipping(self):
-#         self.order_id.zippin_shipping_label_bin = None
-#         self.order_id.zippin_pickup_order_id = None
-#         self.order_id.zippin_pickup_carrier_id = None
-#         self.order_id.zippin_pickup_is_pickup = None
-#         self.order_id.zippin_pickup_point_id = None 
-#         self.order_id.zippin_pickup_name = None 
-#         self.order_id.zippin_pickup_address = None 
-#         self.order_id.zippin_logistic_type = None 
-#         self.order_id.zippin_shipping_id = None 
-#         self.order_id.zippin_shipping_delivery_id = None 
-#         self.order_id.zippin_shipping_carrier_tracking_id = None 
-#         self.order_id.zippin_shipping_carrier_tracking_id_alt = None 
-#         self.order_id.zippin_shipping_tracking = None 
-#         self.order_id.zippin_shipping_tracking_external = None 
-#         self.order_id.zippin_create_shipping_view = True
-#         self.order_id.zippin_create_label_view = True
-#         self.order_id.zippin_delete_shipping_view = True
-
-#     #Borra la informacion de envio cuando aun no se generó la etiqueta de envio.
-#     def delete_zippin_info(self):
-#         if self.order_id.zippin_shipping_id:
-#             raise ValidationError('No se puede borrar o actualizar un envío ya creado, primero cancele el envio.')
-#         else:
-#             self.delete_zippin_shipping()
-
-#     #Modifico la funcion unlink para que borre sucursales e informacion de envio en sale.order
-#     def unlink(self):
-#         for line in self:
-#             if line.is_delivery:
-#                 self.delete_pickup_points()
-#                 self.delete_zippin_info()
-#         res = super(SaleOrderLine, self).unlink()
-#         return res
-
-
 
