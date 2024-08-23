@@ -13,7 +13,7 @@
     'website': "https://www.InfotecLaPlata.com.ar",
     'category': 'Sales',
     'version': '16.0.4',
-    'depends': ['zippin','delivery','account','stock','base','l10n_ar'],
+    'depends': ['delivery','account','stock','base','l10n_ar'],
     'data': [
         'data/zippin_data.xml',
         'security/ir.model.access.csv',
