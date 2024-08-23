@@ -7,37 +7,13 @@
                 <xpath expr="//div[1]" position="after">
                     <label for="zippin_estimated_delivery" attrs="{'invisible': [('carrier_id','=', False)]}"/>
                     <div class="o_row">
-                        <!-- <field name="zippin_estimated_delivery" readonly="1" widget="date"
-                            options="{'currency_field': 'currency_id', 'format': 'dd/MM/yyyy'}}"
-                            attrs="{'invisible': [('carrier_id','=', False)]}"/> -->
-                        <!--<button name="set_only_the_date"
-                                type="object"
-                                string="Guardar fecha"
-                                class="btn-secondary o_form_input o_field_widget o_required_modifier"
-                                icon="fa-solid fa-truck"
-                                attrs="{
-                                'invisible': [('carrier_id','=', False)],
-                                'readonly': [('zippin_estimated_delivery','in', (False, ''))]
-                                }"/> -->
+
                             <field name='zippin_estimated_delivery' readonly="1" widget="date" options="{'currency_field': 'currency_id'}" attrs="{'invisible': [('carrier_id','=', False)]}"/>
                             <button name="set_only_the_date" type="object" attrs="{'invisible': ['|',('delivery_type','in', ('fixed', 'base_on_rule')), ('carrier_id','=', False)]}">
                                 <i class="fa fa-arrow-right me-1"/>Guardar fecha
                             </button>
                     </div>
 
-                        <!-- <field name="zippin_estimated_delivery" readonly="1"  widget="date"
-                            options="{'currency_field': 'currency_id', 'format': 'dd/MM/yyyy'}"
-                            attrs="{'invisible': [('carrier_id','=', False)]}"/>
-
-                        <button name="set_only_the_date"
-                                type="object"
-                                string="Guardar fecha"
-                                class="btn-secondary o_form_input o_field_widget o_required_modifier"
-                                icon="fa-solid fa-truck"
-                                attrs="{
-                                'invisible': [('carrier_id','=', False)],
-                                'readonly': [('zippin_estimated_delivery','=', False)]
-                                }"/> -->
                 </xpath>
             </field>
         </record>
