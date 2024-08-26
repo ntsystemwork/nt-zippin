@@ -32,6 +32,9 @@ class SaleOrder(models.Model):
 
     zippin_estimated_delivery = fields.Datetime(string='Entrega estimada')
 
+    zippin_min_date = fields.Date(string='Entrega estimada mínima')
+    zippin_max_date = fields.Date(string='Entrega estimada máxima')
+
 
     def _check_carrier_quotation(self, force_carrier_id=None, keep_carrier=False):
         
@@ -238,7 +241,7 @@ class SaleOrder(models.Model):
 
         data = {
                 #"external_id": str(self.company_id.zippin_description_web)+'-NT-'+str(self.id),
-            "external_id": str(self.company_id.zippin_description_web)+'NT'+str(self.id),
+            "external_id": str(self.company_id.zippin_description_web)+'NT'+str(self.id),#no debe contener espacios
             "account_id": self.company_id.zippin_id,
             "origin_id": self._zippin_get_origen_id(),
             "service_type": service_type,
@@ -248,9 +251,11 @@ class SaleOrder(models.Model):
         }
 
         data["items"] = self._zippin_prepare_items()
+        # raise ValidationError(str( data["items"] ))
 
         data["destination"]= self._zippin_to_shipping_data()
         r = requests.post(url, headers=self._zippin_api_headers(), json=data)
+
 
         vals_log = {
             'order_id': self.id,

@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+    <template id="report_external_layout_striped_inherit" inherit_id="sale.report_saleorder_document">
+        <xpath expr="//div[2]" position="after">
+            <div class="row">
+                <div class="col-auto col-12 mw-100 mb-2">
+                    <strong style="color: #2B5078;">Entrega estimada: </strong>
+                    <p t-field="doc.zippin_estimated_delivery" t-options="{ 'widget': 'date' }"/>
+                </div>
+            </div>
+        </xpath>
+    </template>
+</odoo>

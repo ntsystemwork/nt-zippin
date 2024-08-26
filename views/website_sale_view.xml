@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <template id="extended_sale_order_portal_content" inherit_id="sale.sale_order_portal_content">
+        <xpath expr="//div[@id='informations']" position="inside">
+            <div class="row mt16">
+                <div class="col-12">
+                    <strong for="estimated_delivery" >Entrega estimada: </strong>
+                    <span  id="estimated_delivery" t-field="sale_order.zippin_estimated_delivery" t-options="{ 'widget': 'date' }"/>
+                </div>
+            </div>
+        </xpath>
+    </template>
+</odoo>

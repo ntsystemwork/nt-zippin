@@ -18,8 +18,7 @@ class DeliveryCarrier(models.Model):
     def zippin_send_shipping(self, pickings):
         res = []
         for p in pickings:
-            res = res + [{'exact_price': 0,
-                          'tracking_number': False}]
+            res = res + [{'exact_price': 0, 'tracking_number': False}]
         return res
 
 
@@ -210,9 +209,9 @@ class DeliveryCarrier(models.Model):
                 'error_message': 'No disponible, revisar el log',
                 'warning_message': False
             }
-            
-            
-            
+
+
+
     def _zippin_api_headers(self, order):
 
         headers = CaseInsensitiveDict()
@@ -225,6 +224,9 @@ class DeliveryCarrier(models.Model):
         headers["Authorization"] = "Basic " + zippin_auth
 
         return(headers)
+
+
+
 
     def _zippin_get_origen_id(self, order):
 
@@ -242,7 +244,7 @@ class DeliveryCarrier(models.Model):
             return(resp)
 
 
-    
+
     def _zippin_to_shipping_data(self, order):
 
         if order.partner_shipping_id.city == False:

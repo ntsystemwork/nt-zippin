@@ -21,6 +21,17 @@
 				<field name="zippin_estimated_delivery" widget="date" options="{'format': 'dd/MM/yyyy'}"/>
 			</field>
 
+			<xpath expr="//group[@name='sale_shipping']" position="inside">
+				<label for="zippin_min_date"/>
+				<div class="o_row">
+					<field name="zippin_min_date"/>
+				</div>
+				<label for="zippin_max_date"/>
+				<div class="o_row">
+					<field name="zippin_max_date"/>
+				</div>
+			</xpath>
+			
 			<xpath expr="//notebook" position="inside">
 				<page string="Log Zipping" groups="base.group_no_one">
 					<br/>
@@ -36,6 +47,7 @@
 					</group>
 				</page>
 			</xpath>
+
         </field>
     </record>
 
@@ -49,7 +61,5 @@
 		</field>
         </field>
     </record>
-
-
-
+	
 </odoo>

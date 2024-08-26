@@ -21,6 +21,8 @@
         'views/account_move_view.xml',
         'views/stock_picking_view.xml',
         'wizard/choose_delivery_carrier_form_view.xml',
+        'reports/estimated_delivery_report.xml',
+        'views/website_sale_view.xml',
     ],
     'assets': {
     },
