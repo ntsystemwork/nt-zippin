@@ -45,8 +45,8 @@ class SaleOrder(models.Model):
 
     # zippin_estimated_delivery = fields.Date(string='Entrega estimada')
 
-    zippin_min_date = fields.Date(string='Entrega estimada mínima')
-    zippin_max_date = fields.Date(string='Entrega estimada máxima')
+    zippin_min_date = fields.Date(string='Entrega estimada mínima', tracking=True)
+    zippin_max_date = fields.Date(string='Entrega estimada máxima', tracking=True)
     zippin_latest_shipping_query = fields.Date(string='Última consulta de envío')
 
 
@@ -412,7 +412,6 @@ class SaleOrder(models.Model):
                 if commitment_date > zippin_max_date:
                     raise ValidationError(_('La fecha de entrega debe ser menor o igual a la fecha de entrega estimada máxima'))
 
-        # self._post_dates_to_chatter()
 
 
     def write(self, vals):
@@ -429,19 +428,5 @@ class SaleOrder(models.Model):
         return res
 
 
-
-    # def _post_dates_to_chatter(self):
-    #     for order in self:
-    #         if order.commitment_date and order.zippin_max_date:
-    #             message_body = (
-    #                 f"Entrega Estimada Mínima: {order.zippin_min_date}\n"
-    #                 f"Entrega Estimada Máxima: {order.zippin_max_date}"
-    #             )
-    #             order.message_post(
-    #                 body=message_body,
-    #                 subject="Actualización de Fechas",
-    #                 message_type='notification',
-    #                 subtype_xmlid='mail.mt_comment'
-    #             )
 
 
