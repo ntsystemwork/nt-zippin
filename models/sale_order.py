@@ -1,9 +1,22 @@
-from odoo import models, fields, api
+from odoo import models, fields, api, _
 from odoo.exceptions import ValidationError
 from odoo.addons.zippin.models.delivery_carrier import ID_CORREO_ARGENTINO, ID_OCA, ID_ANDREANI, APIURL
 from requests.structures import CaseInsensitiveDict
 import requests, base64
-from datetime import datetime
+from datetime import date, datetime, timedelta
+
+
+import logging
+_logger = logging.getLogger(__name__)
+
+# TODO:
+# 1- agregar un campo de ultima fecha consultada en el sale.order
+# 2- utilizar la fecha antes mencionada del sale.order para validar que la fecha de entrega está actualizada,
+#de lo contrario debe lanzarse una ventana solicitanto actualizar la fecha de entrega
+# 3- si los campos de las fechas de entrega están vacíos, debe lanzarse una ventana para solicitar la fecha de entrega
+#
+#
+
 
 class SaleOrder(models.Model):
     _inherit = 'sale.order'
@@ -30,14 +43,22 @@ class SaleOrder(models.Model):
     zippin_shipping_label_bin = fields.Binary(copy=False)
     zippin_shipping_label_filename = fields.Char(compute='_compute_shipping_label_filename')
 
-    zippin_estimated_delivery = fields.Datetime(string='Entrega estimada')
+    # zippin_estimated_delivery = fields.Date(string='Entrega estimada')
 
     zippin_min_date = fields.Date(string='Entrega estimada mínima')
     zippin_max_date = fields.Date(string='Entrega estimada máxima')
+    zippin_latest_shipping_query = fields.Date(string='Última consulta de envío')
+
+
+
+    def add_days_to_current_date(self, days_to_add):
+        current_date = datetime.now()
+        new_date = current_date + timedelta(days=days_to_add)
+        return str(new_date)
+
 
 
     def _check_carrier_quotation(self, force_carrier_id=None, keep_carrier=False):
-        
         res = super(SaleOrder, self)._check_carrier_quotation(force_carrier_id=None,keep_carrier=keep_carrier)
 
         zp_DeliveryCarrier = self.env['delivery.carrier']
@@ -62,6 +83,7 @@ class SaleOrder(models.Model):
         return res
 
 
+
     @api.depends('zippin_shipping_label_bin')
     def _compute_shipping_label_filename(self):
         self.ensure_one()
@@ -74,6 +96,7 @@ class SaleOrder(models.Model):
         self.zippin_shipping_label_filename = name
 
 
+
     def action_open_delivery_wizard(self):
         for rec in self:
             if rec.state not in ['draft','sent']:
@@ -81,11 +104,13 @@ class SaleOrder(models.Model):
         return super(SaleOrder, self).action_open_delivery_wizard()
 
 
+
     def _prepare_invoice(self):
         res = super(SaleOrder, self)._prepare_invoice()
         if self.zippin_shipping_tracking_external:
             res['zippin_shipping_tracking_external'] = self.zippin_shipping_tracking_external
         return res
+
 
 
     def _get_product_list(self,bom,r,qty):
@@ -97,7 +122,7 @@ class SaleOrder(models.Model):
                 and bom_line.product_id.type == 'product' \
                 and not bom_line.product_id.bom_ids:
                 raise ValidationError('#5 Error: El producto ' + bom_line.product_id.name + ' debe tener peso y tamaño asignados.')
-            
+
             if not bom_line.product_id.bom_ids:
                 for i in range(int(qty * bom_line.product_qty)):
                     product_list = {
@@ -130,6 +155,7 @@ class SaleOrder(models.Model):
         return r
 
 
+
     def _zippin_prepare_items(self):
         r = []
         if self.order_line:
@@ -158,8 +184,8 @@ class SaleOrder(models.Model):
         return(r)
 
 
-    def _zippin_api_headers(self):
 
+    def _zippin_api_headers(self):
         headers = CaseInsensitiveDict()
         headers["Content-Type"] = "application/json"
         headers["Accept"] = "application/json"
@@ -170,6 +196,7 @@ class SaleOrder(models.Model):
         headers["Authorization"] = "Basic " + zippin_auth
 
         return(headers)
+
 
 
     def _zippin_get_origen_id(self):
@@ -188,8 +215,8 @@ class SaleOrder(models.Model):
             return(resp)
 
 
-    def _zippin_to_shipping_data(self):
 
+    def _zippin_to_shipping_data(self):
         if self.partner_shipping_id.city == False:
             raise ValidationError('¡El Cliente debe tener Ciudad!')
         elif self.partner_shipping_id.state_id.name == False:
@@ -227,8 +254,11 @@ class SaleOrder(models.Model):
         return(r)
 
 
-    def action_zippin_create_shipping(self):
 
+    def action_zippin_create_shipping(self):
+        if self.zippin_latest_shipping_query:
+            if date.today() > self.zippin_latest_shipping_query:
+                raise ValidationError('Debe actualizar la fecha de entrega fecha de entrega para el envío')
         url = APIURL + "/shipments"
 
         #VALOR DECLARADO EN CERO SI NO SE PONE SEGURO AL ENVIO
@@ -256,7 +286,6 @@ class SaleOrder(models.Model):
         data["destination"]= self._zippin_to_shipping_data()
         r = requests.post(url, headers=self._zippin_api_headers(), json=data)
 
-
         vals_log = {
             'order_id': self.id,
             'dt_llamada': str(datetime.now())[:16],
@@ -268,9 +297,7 @@ class SaleOrder(models.Model):
         self.env.cr.commit()
 
         if r.status_code < 400:
-            
-            r= r.json()
-
+            r = r.json()
             self.zippin_shipping_id = r["id"]
             self.zippin_shipping_delivery_id = r["delivery_id"]
             self.zippin_shipping_carrier_tracking_id = r["carrier_tracking_id"]
@@ -287,6 +314,7 @@ class SaleOrder(models.Model):
             raise ValidationError('Zippin Error: ' +r["message"]+'\n %s'%(r.get('error')))
 
 
+
     def action_zippin_delete_shipping(self):
 
         url = APIURL + "/shipments/" + self.zippin_shipping_id +"/cancel"
@@ -301,8 +329,8 @@ class SaleOrder(models.Model):
             raise ValidationError(r.status_code)
 
 
-    def delete_zippin_shipping(self):
 
+    def delete_zippin_shipping(self):
         self.zippin_shipping_label_bin = None
         self.zippin_pickup_order_id = None
         self.zippin_pickup_carrier_id = None
@@ -320,6 +348,7 @@ class SaleOrder(models.Model):
         self.zippin_create_shipping_view = True
         self.zippin_create_label_view = True
         self.zippin_delete_shipping_view = True
+
 
 
     def action_zippin_get_label(self):
@@ -350,6 +379,42 @@ class SaleOrder(models.Model):
                 raise ValidationError('La etiqueta no esta disponible aun. Intente en un momento')
 
 
+
+    @api.onchange('commitment_date', 'zippin_min_date', 'zippin_max_date')
+    def update_dates(self):
+        self.ensure_one()
+        for rec in self:
+            # Asegúrate de que rec.commitment_date sea datetime.date o datetime.datetime
+            if isinstance(rec.commitment_date, datetime):
+                commitment_date = rec.commitment_date.date()
+            else:
+                commitment_date = rec.commitment_date
+            
+            if isinstance(rec.zippin_min_date, datetime):
+                zippin_min_date = rec.zippin_min_date.date()
+            else:
+                zippin_min_date = rec.zippin_min_date
+            
+            if isinstance(rec.zippin_max_date, datetime):
+                zippin_max_date = rec.zippin_max_date.date()
+            else:
+                zippin_max_date = rec.zippin_max_date
+
+            if commitment_date and zippin_min_date:
+                if commitment_date > zippin_min_date:
+                    raise ValidationError(_('La fecha de entrega debe ser menor o igual a la fecha de entrega estimada mínima'))
+
+            if zippin_min_date and zippin_max_date:
+                if zippin_min_date > zippin_max_date:
+                    raise ValidationError(_('La fecha de entrega estimada mínima debe ser menor o igual a la fecha de entrega estimada máxima'))
+
+            if commitment_date and zippin_max_date:
+                if commitment_date > zippin_max_date:
+                    raise ValidationError(_('La fecha de entrega debe ser menor o igual a la fecha de entrega estimada máxima'))
+
+        # self._post_dates_to_chatter()
+
+
     def write(self, vals):
         res = super(SaleOrder, self).write(vals)
         for rec in self:
@@ -362,4 +427,21 @@ class SaleOrder(models.Model):
                                 order = order_line.order_id
                                 order.action_zippin_create_shipping()
         return res
+
+
+
+    # def _post_dates_to_chatter(self):
+    #     for order in self:
+    #         if order.commitment_date and order.zippin_max_date:
+    #             message_body = (
+    #                 f"Entrega Estimada Mínima: {order.zippin_min_date}\n"
+    #                 f"Entrega Estimada Máxima: {order.zippin_max_date}"
+    #             )
+    #             order.message_post(
+    #                 body=message_body,
+    #                 subject="Actualización de Fechas",
+    #                 message_type='notification',
+    #                 subtype_xmlid='mail.mt_comment'
+    #             )
+
 

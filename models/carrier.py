@@ -3,10 +3,14 @@ from odoo.exceptions import ValidationError
 from odoo.addons.zippin.models.delivery_carrier import ID_CORREO_ARGENTINO, ID_OCA, ID_ANDREANI, APIURL, ID_PICKUP_DELIVERY, ID_STANDARD_DELIVERY
 from requests.structures import CaseInsensitiveDict
 import requests, base64
-from datetime import date, datetime
+from datetime import datetime
 
 import logging
 _logger = logging.getLogger(__name__)
+
+
+
+
 
 class DeliveryCarrier(models.Model):
     _inherit = 'delivery.carrier'
@@ -133,12 +137,13 @@ class DeliveryCarrier(models.Model):
             shipment_price = 99999999
             shipment_type = 208
             estimated_delivery = ''
+            min_estimated_delivery = ''
+            max_estimated_delivery = ''
             
             for i in r["all_results"]:
-                
                 # Hito_Ale: refactorizamos esta sección para que no tenga en cuenta shipping_type y obtenga el valor mas ba jo
                 # de amounts->price de cada carriers informado en el response de la API de zippin
-                                
+                # raise ValidationError(f"{i['delivery_time']['min']} {i['delivery_time']['max']}")
                 if self.zippin_shipment_type_is_pickup:
                     if i["service_type"]["id"] == ID_PICKUP_DELIVERY:# (i["carrier"]["id"] == int(self.zippin_shipment_type) or True) and 
                         if i["amounts"]["price"] < shipment_price and i["amounts"]["price"] > 0:
@@ -146,6 +151,8 @@ class DeliveryCarrier(models.Model):
                             logistic_type = i["logistic_type"]
                             shipment_type = i["carrier"]["id"]
                             estimated_delivery = i['delivery_time']['estimated_delivery']
+                            min_estimated_delivery = i['delivery_time']['min']
+                            max_estimated_delivery = i['delivery_time']['max']
                             # raise ValidationError('ID_PICKUP_DELIVERY ' + str(i['delivery_time']['estimated_delivery']))
                 # else:
                 if i["service_type"]["id"] == ID_STANDARD_DELIVERY: #(i["carrier"]["id"] == int(self.zippin_shipment_type) or True) and 
@@ -154,6 +161,8 @@ class DeliveryCarrier(models.Model):
                         logistic_type = i["logistic_type"]
                         shipment_type = i["carrier"]["id"]
                         estimated_delivery = i['delivery_time']['estimated_delivery']
+                        min_estimated_delivery = i['delivery_time']['min']
+                        max_estimated_delivery = i['delivery_time']['max']
                         # raise ValidationError('ID_STANDARD_DELIVERY ' + str(i['delivery_time']['estimated_delivery']))
                             
 
@@ -176,7 +185,9 @@ class DeliveryCarrier(models.Model):
                 'error_message': False,
                 'warning_message': False,
                 'shipment_type': shipment_type,
-                'zippin_estimated_delivery': estimated_delivery
+                'zippin_estimated_delivery': estimated_delivery,
+                'min':min_estimated_delivery,
+                'max':max_estimated_delivery,
             }
 
         elif r.status_code == 408:
@@ -206,7 +217,7 @@ class DeliveryCarrier(models.Model):
             return {
                 'success': False,
                 'price': 0,
-                'error_message': 'No disponible, revisar el log',
+                'error_message': 'Error inesperado',
                 'warning_message': False
             }
 

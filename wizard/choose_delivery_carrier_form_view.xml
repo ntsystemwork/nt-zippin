@@ -7,13 +7,11 @@
                 <xpath expr="//div[1]" position="after">
                     <label for="zippin_estimated_delivery" attrs="{'invisible': [('carrier_id','=', False)]}"/>
                     <div class="o_row">
-
-                            <field name='zippin_estimated_delivery' readonly="1" widget="date" options="{'currency_field': 'currency_id'}" attrs="{'invisible': [('carrier_id','=', False)]}"/>
-                            <button name="set_only_the_date" type="object" attrs="{'invisible': ['|',('delivery_type','in', ('fixed', 'base_on_rule')), ('carrier_id','=', False)]}">
-                                <i class="fa fa-arrow-right me-1"/>Guardar fecha
-                            </button>
+                        <field name='zippin_estimated_delivery' readonly="1" widget="date" options="{'currency_field': 'currency_id'}" attrs="{'invisible': [('carrier_id','=', False)]}"/>
+                        <button name="set_only_the_date" type="object" attrs="{'invisible': ['|',('delivery_type','in', ('fixed', 'base_on_rule')), ('carrier_id','=', False)]}">
+                            <i class="fa fa-arrow-right me-1"/>Guardar fecha
+                        </button>
                     </div>
-
                 </xpath>
             </field>
         </record>
