@@ -12,27 +12,51 @@
         </field>
     </record>
 
-
     <record id="zippin_log_sale_order_form" model="ir.ui.view">
         <field name="name">zipping.log.sale.order.form</field>
         <field name="model">sale.order</field>
-        <field name="inherit_id" ref="sale.view_order_form" ></field>
-	<field name="arch" type="xml">
-		<xpath expr="//notebook" position="inside">
-			<page string="Log Zipping" groups="base.group_no_one">
-				<br />
-				<group>
-					<field name="zippin_log_ids" readonly="1" >
-						<tree>
-							<field name="dt_llamada" />
-							<field name="llamada" />
-							<field name="request" />
-							<field name="response" optional="hide"/>
-						</tree>	
-					</field>
-				</group>
-			</page>
-		</xpath>
+        <field name="inherit_id" ref="sale.view_order_form"/>
+		<field name="arch" type="xml">
+			<!-- <field name="validity_date" position="after">
+				<field name="zippin_estimated_delivery" widget="date" options="{'format': 'dd/MM/yyyy'}"/>
+			</field> -->
+
+			<xpath expr="//group[@name='sale_shipping']" position="inside">
+				<label for="zippin_min_date"/>
+				<div class="o_row">
+					<field name="zippin_min_date" widget="date" options="{'format': 'dd/MM/yyyy'}"/>
+				</div>
+				<label for="zippin_max_date" />
+				<div class="o_row">
+					<field name="zippin_max_date" widget="date" options="{'format': 'dd/MM/yyyy'}"/>
+				</div>
+			</xpath>
+
+			<field name="commitment_date" position="attributes">
+				<attribute name="widget">date</attribute>
+				<attribute name="options">{'datepicker': {'format': 'dd/MM/yyyy'}}</attribute>
+			</field>
+			<field name="date_order" position="attributes">
+				<attribute name="widget">date</attribute>
+				<attribute name="options">{'datepicker': {'format': 'dd/MM/yyyy'}}</attribute>
+			</field>
+
+			<xpath expr="//notebook" position="inside">
+				<page string="Log Zipping" groups="base.group_no_one">
+					<br/>
+					<group>
+						<field name="zippin_log_ids" readonly="1" >
+							<tree>
+								<field name="dt_llamada" />
+								<field name="llamada" />
+								<field name="request" />
+								<field name="response" optional="hide"/>
+							</tree>
+						</field>
+					</group>
+				</page>
+			</xpath>
+
         </field>
     </record>
 
@@ -40,13 +64,11 @@
         <field name="name">zipping.delivery.carrier.form</field>
         <field name="model">delivery.carrier</field>
         <field name="inherit_id" ref="delivery.view_delivery_carrier_form" ></field>
-	<field name="arch" type="xml">
-		<field name="company_id" position="after">
-			<field name="is_free" />
-		</field>
+		<field name="arch" type="xml">
+			<field name="company_id" position="after">
+				<field name="is_free" />
+			</field>
         </field>
     </record>
-
-
 
 </odoo>
