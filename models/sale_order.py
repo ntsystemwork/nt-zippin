@@ -1,9 +1,22 @@
-from odoo import models, fields, api
+from odoo import models, fields, api, _
 from odoo.exceptions import ValidationError
 from odoo.addons.zippin.models.delivery_carrier import ID_CORREO_ARGENTINO, ID_OCA, ID_ANDREANI, APIURL
 from requests.structures import CaseInsensitiveDict
 import requests, base64
-from datetime import datetime
+from datetime import date, datetime, timedelta
+
+
+import logging
+_logger = logging.getLogger(__name__)
+
+# TODO:
+# 1- agregar un campo de ultima fecha consultada en el sale.order
+# 2- utilizar la fecha antes mencionada del sale.order para validar que la fecha de entrega está actualizada,
+#de lo contrario debe lanzarse una ventana solicitanto actualizar la fecha de entrega
+# 3- si los campos de las fechas de entrega están vacíos, debe lanzarse una ventana para solicitar la fecha de entrega
+#
+#
+
 
 class SaleOrder(models.Model):
     _inherit = 'sale.order'
@@ -30,10 +43,22 @@ class SaleOrder(models.Model):
     zippin_shipping_label_bin = fields.Binary(copy=False)
     zippin_shipping_label_filename = fields.Char(compute='_compute_shipping_label_filename')
 
+    # zippin_estimated_delivery = fields.Date(string='Entrega estimada')
+
+    zippin_min_date = fields.Date(string='Entrega estimada mínima', tracking=True)
+    zippin_max_date = fields.Date(string='Entrega estimada máxima', tracking=True)
+    zippin_latest_shipping_query = fields.Date(string='Última consulta de envío')
+
+
+
+    def add_days_to_current_date(self, days_to_add):
+        current_date = datetime.now()
+        new_date = current_date + timedelta(days=days_to_add)
+        return str(new_date)
+
 
 
     def _check_carrier_quotation(self, force_carrier_id=None, keep_carrier=False):
-        
         res = super(SaleOrder, self)._check_carrier_quotation(force_carrier_id=None,keep_carrier=keep_carrier)
 
         zp_DeliveryCarrier = self.env['delivery.carrier']
@@ -53,10 +78,9 @@ class SaleOrder(models.Model):
                     self.zippin_pickup_carrier_id = self.carrier_id.zippin_shipment_type
                     if self.carrier_id.zippin_shipment_type_is_pickup:
                         self.zippin_pickup_is_pickup = True
-                    else: 
+                    else:
                         self.zippin_pickup_is_pickup = False
         return res
-
 
 
 
@@ -73,20 +97,21 @@ class SaleOrder(models.Model):
 
 
 
-
-
-
     def action_open_delivery_wizard(self):
         for rec in self:
             if rec.state not in ['draft','sent']:
                 raise ValidationError('Accion deshabilitada para el estado %s'%(rec.state))
         return super(SaleOrder, self).action_open_delivery_wizard()
 
+
+
     def _prepare_invoice(self):
         res = super(SaleOrder, self)._prepare_invoice()
         if self.zippin_shipping_tracking_external:
             res['zippin_shipping_tracking_external'] = self.zippin_shipping_tracking_external
         return res
+
+
 
     def _get_product_list(self,bom,r,qty):
         for bom_line in bom.bom_line_ids:
@@ -97,7 +122,7 @@ class SaleOrder(models.Model):
                 and bom_line.product_id.type == 'product' \
                 and not bom_line.product_id.bom_ids:
                 raise ValidationError('#5 Error: El producto ' + bom_line.product_id.name + ' debe tener peso y tamaño asignados.')
-            
+
             if not bom_line.product_id.bom_ids:
                 for i in range(int(qty * bom_line.product_qty)):
                     product_list = {
@@ -129,6 +154,8 @@ class SaleOrder(models.Model):
             #        r = self._get_product_list(bom,r,qty)
         return r
 
+
+
     def _zippin_prepare_items(self):
         r = []
         if self.order_line:
@@ -159,7 +186,6 @@ class SaleOrder(models.Model):
 
 
     def _zippin_api_headers(self):
-
         headers = CaseInsensitiveDict()
         headers["Content-Type"] = "application/json"
         headers["Accept"] = "application/json"
@@ -170,6 +196,8 @@ class SaleOrder(models.Model):
         headers["Authorization"] = "Basic " + zippin_auth
 
         return(headers)
+
+
 
     def _zippin_get_origen_id(self):
 
@@ -189,7 +217,6 @@ class SaleOrder(models.Model):
 
 
     def _zippin_to_shipping_data(self):
-
         if self.partner_shipping_id.city == False:
             raise ValidationError('¡El Cliente debe tener Ciudad!')
         elif self.partner_shipping_id.state_id.name == False:
@@ -227,8 +254,11 @@ class SaleOrder(models.Model):
         return(r)
 
 
-    def action_zippin_create_shipping(self):
 
+    def action_zippin_create_shipping(self):
+        if self.zippin_latest_shipping_query:
+            if date.today() > self.zippin_latest_shipping_query:
+                raise ValidationError('Debe actualizar la fecha de entrega fecha de entrega para el envío')
         url = APIURL + "/shipments"
 
         #VALOR DECLARADO EN CERO SI NO SE PONE SEGURO AL ENVIO
@@ -241,7 +271,7 @@ class SaleOrder(models.Model):
 
         data = {
                 #"external_id": str(self.company_id.zippin_description_web)+'-NT-'+str(self.id),
-            "external_id": str(self.company_id.zippin_description_web)+'NT'+str(self.id),
+            "external_id": str(self.company_id.zippin_description_web)+'NT'+str(self.id),#no debe contener espacios
             "account_id": self.company_id.zippin_id,
             "origin_id": self._zippin_get_origen_id(),
             "service_type": service_type,
@@ -251,6 +281,7 @@ class SaleOrder(models.Model):
         }
 
         data["items"] = self._zippin_prepare_items()
+        # raise ValidationError(str( data["items"] ))
 
         data["destination"]= self._zippin_to_shipping_data()
         r = requests.post(url, headers=self._zippin_api_headers(), json=data)
@@ -266,9 +297,7 @@ class SaleOrder(models.Model):
         self.env.cr.commit()
 
         if r.status_code < 400:
-            
-            r= r.json()
-
+            r = r.json()
             self.zippin_shipping_id = r["id"]
             self.zippin_shipping_delivery_id = r["delivery_id"]
             self.zippin_shipping_carrier_tracking_id = r["carrier_tracking_id"]
@@ -283,6 +312,7 @@ class SaleOrder(models.Model):
         else:
             r= r.json()
             raise ValidationError('Zippin Error: ' +r["message"]+'\n %s'%(r.get('error')))
+
 
 
     def action_zippin_delete_shipping(self):
@@ -301,7 +331,6 @@ class SaleOrder(models.Model):
 
 
     def delete_zippin_shipping(self):
-
         self.zippin_shipping_label_bin = None
         self.zippin_pickup_order_id = None
         self.zippin_pickup_carrier_id = None
@@ -351,6 +380,40 @@ class SaleOrder(models.Model):
 
 
 
+    @api.onchange('commitment_date', 'zippin_min_date', 'zippin_max_date')
+    def update_dates(self):
+        self.ensure_one()
+        for rec in self:
+            # Asegúrate de que rec.commitment_date sea datetime.date o datetime.datetime
+            if isinstance(rec.commitment_date, datetime):
+                commitment_date = rec.commitment_date.date()
+            else:
+                commitment_date = rec.commitment_date
+            
+            if isinstance(rec.zippin_min_date, datetime):
+                zippin_min_date = rec.zippin_min_date.date()
+            else:
+                zippin_min_date = rec.zippin_min_date
+            
+            if isinstance(rec.zippin_max_date, datetime):
+                zippin_max_date = rec.zippin_max_date.date()
+            else:
+                zippin_max_date = rec.zippin_max_date
+
+            if commitment_date and zippin_min_date:
+                if commitment_date > zippin_min_date:
+                    raise ValidationError(_('La fecha de entrega debe ser menor o igual a la fecha de entrega estimada mínima'))
+
+            if zippin_min_date and zippin_max_date:
+                if zippin_min_date > zippin_max_date:
+                    raise ValidationError(_('La fecha de entrega estimada mínima debe ser menor o igual a la fecha de entrega estimada máxima'))
+
+            if commitment_date and zippin_max_date:
+                if commitment_date > zippin_max_date:
+                    raise ValidationError(_('La fecha de entrega debe ser menor o igual a la fecha de entrega estimada máxima'))
+
+
+
     def write(self, vals):
         res = super(SaleOrder, self).write(vals)
         for rec in self:
@@ -364,70 +427,6 @@ class SaleOrder(models.Model):
                                 order.action_zippin_create_shipping()
         return res
 
-# class SaleOrderLine(models.Model):
-#     _inherit = 'sale.order.line'
-
-#     @api.model
-#     def create(self, vals):
-#         if 'product_id' in vals:
-#             product_id = vals.get('product_id')
-#             delivery = self.env['delivery.carrier'].search([('product_id','=',product_id),('is_free','=',True)])
-#             #if delivery:
-#             #    vals['discount'] = 100
-#         res = super(SaleOrderLine, self).create(vals)
-#         if 'product_id' in vals and delivery:
-#             #if res.product_id.property_account_income_id.id != self.env.ref('l10n_ar.1_base_prevision_gastos').id:
-#             #    raise ValidationError('Cuenta de Zippin mal configurada')
-#             vals_line = {
-#                     'order_id': vals.get('order_id'),
-#                     'product_id': self.env.ref('nt-zippin.zippin_delivery_refund').id,
-#                     'name': self.env.ref('nt-zippin.zippin_delivery_refund').name,
-#                     'price_unit': vals.get('price_unit') * (-1),
-#                     'product_uom_qty': 1,
-#                     'product_uom': self.env.ref('nt-zippin.zippin_delivery_refund').uom_id.id,
-#                     }
-#             result = super(SaleOrderLine, self).create(vals_line)
-#         return res
-
-
-#     def delete_pickup_points(self):
-#         res = self.env['zippin.shipping'].search([('order_id','=', int(self.order_id.id))]).unlink()
-#         return(res)
-
-#     def delete_zippin_shipping(self):
-#         self.order_id.zippin_shipping_label_bin = None
-#         self.order_id.zippin_pickup_order_id = None
-#         self.order_id.zippin_pickup_carrier_id = None
-#         self.order_id.zippin_pickup_is_pickup = None
-#         self.order_id.zippin_pickup_point_id = None 
-#         self.order_id.zippin_pickup_name = None 
-#         self.order_id.zippin_pickup_address = None 
-#         self.order_id.zippin_logistic_type = None 
-#         self.order_id.zippin_shipping_id = None 
-#         self.order_id.zippin_shipping_delivery_id = None 
-#         self.order_id.zippin_shipping_carrier_tracking_id = None 
-#         self.order_id.zippin_shipping_carrier_tracking_id_alt = None 
-#         self.order_id.zippin_shipping_tracking = None 
-#         self.order_id.zippin_shipping_tracking_external = None 
-#         self.order_id.zippin_create_shipping_view = True
-#         self.order_id.zippin_create_label_view = True
-#         self.order_id.zippin_delete_shipping_view = True
-
-#     #Borra la informacion de envio cuando aun no se generó la etiqueta de envio.
-#     def delete_zippin_info(self):
-#         if self.order_id.zippin_shipping_id:
-#             raise ValidationError('No se puede borrar o actualizar un envío ya creado, primero cancele el envio.')
-#         else:
-#             self.delete_zippin_shipping()
-
-#     #Modifico la funcion unlink para que borre sucursales e informacion de envio en sale.order
-#     def unlink(self):
-#         for line in self:
-#             if line.is_delivery:
-#                 self.delete_pickup_points()
-#                 self.delete_zippin_info()
-#         res = super(SaleOrderLine, self).unlink()
-#         return res
 
 
 
