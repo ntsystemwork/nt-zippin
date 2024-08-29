@@ -9,3 +9,8 @@ class AccountMove(models.Model):
 
     zippin_shipping_tracking_external = fields.Char('Zippin Shipping Tracking External')
 
+
+
+
+
+

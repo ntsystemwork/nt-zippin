@@ -266,9 +266,18 @@ class DeliveryCarrier(models.Model):
             raise ValidationError('¡El Cliente debe tener Codigo Postal!')
         elif order.partner_shipping_id.street == False:
             raise ValidationError('¡El Cliente debe tener una calle!')
-        elif order.partner_shipping_id.street2 == False:
-            raise ValidationError('¡El Cliente debe tener un número de calle!')
+        # elif order.partner_shipping_id.street2 == False:
+        #     raise ValidationError('¡El Cliente debe tener un número de calle!')
         else:
+
+            home_address = order.extract_street_and_number(order.partner_shipping_id.street)
+            
+            if home_address == False:
+                raise ValidationError('El campo calle del contacto o la dirección de envio no tienen el formato correcto, se espera que el destino sea del siguiente formato "calle número"')
+            
+            street_name, street_number = home_address
+
+
             zp_phone = ''
             if order.partner_shipping_id.phone:
                 zp_phone = zp_phone + order.partner_shipping_id.phone
@@ -280,8 +289,10 @@ class DeliveryCarrier(models.Model):
                 "zipcode": order.partner_shipping_id.zip,
                 "name": order.partner_shipping_id.name,
                 "document": order.partner_shipping_id.vat,
-                "street": order.partner_shipping_id.street,
-                "street_number": order.partner_shipping_id.street2,
+                # "street": order.partner_shipping_id.street,
+                # "street_number": order.partner_shipping_id.street2,
+                "street": street_name,
+                "street_number": street_number,
                 "street_extras": '',
                 "phone": zp_phone,
                 "email": order.partner_shipping_id.email,
