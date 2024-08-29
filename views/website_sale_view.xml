@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <template id="extended_sale_order_portal_content" inherit_id="sale.sale_order_portal_content">
+        <xpath expr="//div[@id='informations']" position="inside">
+            <div class="row mt16">
+                <div class="col-12">
+                    <strong for="estimated_delivery">Entrega estimada: </strong>
+                    <span>
+                        <t t-esc="sale_order.zippin_min_date.strftime('%d/%m/%Y')"/> - 
+                        <t t-esc="sale_order.zippin_max_date.strftime('%d/%m/%Y')"/>
+                    </span>
+                </div>
+            </div>
+        </xpath>
+    </template>
+</odoo>
+
+
