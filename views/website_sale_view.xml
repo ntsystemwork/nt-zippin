@@ -5,7 +5,7 @@
             <div class="row mt16">
                 <div class="col-12">
                     <strong for="estimated_delivery">Entrega estimada: </strong>
-                    <span>
+                    <span t-if="sale_order.zippin_min_date not in ('', False) and sale_order.zippin_max_date not in ('', False)">
                         <t t-esc="sale_order.zippin_min_date.strftime('%d/%m/%Y')"/> - 
                         <t t-esc="sale_order.zippin_max_date.strftime('%d/%m/%Y')"/>
                     </span>

@@ -1,3 +1,4 @@
+import re
 from odoo import models, fields, api, _
 from odoo.exceptions import ValidationError
 from odoo.addons.zippin.models.delivery_carrier import ID_CORREO_ARGENTINO, ID_OCA, ID_ANDREANI, APIURL
@@ -216,6 +217,17 @@ class SaleOrder(models.Model):
 
 
 
+    def extract_street_and_number(self, address):
+        if address in (False, None, ''):
+            return False
+        regex = r'^([A-Za-zÀ-ÖØ-öø-ÿ\s\d]+?)\s(\d{1,5})\b'
+        match = re.match(regex, address)
+        if match:
+            return match.group(1).strip(), match.group(2)
+        return False
+
+
+
     def _zippin_to_shipping_data(self):
         if self.partner_shipping_id.city == False:
             raise ValidationError('¡El Cliente debe tener Ciudad!')
@@ -223,6 +235,8 @@ class SaleOrder(models.Model):
             raise ValidationError('¡El Cliente debe tener Estado/Provincia!')
         elif self.partner_shipping_id.zip == False:
             raise ValidationError('¡El Cliente debe tener Codigo Postal!')
+        elif self.partner_shipping_id.street in (False, None, ''):
+            raise ValidationError('¡Los campos calle en el contacto y la direccion de envío no pueden estár vacíos!')
         else:
             zp_phone = ''
             if self.partner_shipping_id.phone:
@@ -238,15 +252,24 @@ class SaleOrder(models.Model):
                     "email": self.partner_shipping_id.email,
                     "point_id": int(self.zippin_pickup_point_id),
                 }
-            else: 
+            else:
+                home_address = self.extract_street_and_number(self.partner_shipping_id.street)
+                
+                if home_address == False:
+                    raise ValidationError('El campo calle del contacto o la dirección de envio no tienen el formato correcto, se espera que el destino sea del siguiente formato "calle número"')
+                
+                street_name, street_number = home_address
+                    
                 r = {
                     "city": self.partner_shipping_id.city,
                     "state": self.partner_shipping_id.state_id.name,
                     "zipcode": self.partner_shipping_id.zip,
                     "name": self.partner_shipping_id.name,
                     "document": self.partner_shipping_id.vat,
-                    "street": self.partner_shipping_id.street,
-                    "street_number": self.partner_shipping_id.street2,
+                    # "street": self.partner_shipping_id.street,
+                    # "street_number": self.partner_shipping_id.street2,
+                    "street": str(street_name),
+                    "street_number": str(street_number),
                     "street_extras": '',
                     "phone": zp_phone,
                     "email": self.partner_shipping_id.email,
@@ -399,10 +422,6 @@ class SaleOrder(models.Model):
                 zippin_max_date = rec.zippin_max_date.date()
             else:
                 zippin_max_date = rec.zippin_max_date
-
-            if commitment_date and zippin_min_date:
-                if commitment_date > zippin_min_date:
-                    raise ValidationError(_('La fecha de entrega debe ser menor o igual a la fecha de entrega estimada mínima'))
 
             if zippin_min_date and zippin_max_date:
                 if zippin_min_date > zippin_max_date:
