@@ -2,9 +2,9 @@ from odoo import models, fields, api
 from odoo.exceptions import ValidationError
 from odoo.addons.zippin.models.delivery_carrier import ID_CORREO_ARGENTINO, ID_OCA, ID_ANDREANI
 from datetime import date, datetime
-
 import logging
 _logger = logging.getLogger(__name__)
+
 
 
 
@@ -19,7 +19,6 @@ class ChooseDeliveryCarrier(models.TransientModel):
     zippin_estimated_delivery = fields.Datetime(string='Entrega estimada')
     zippin_min_days = fields.Integer(string='Entrega estimada mínima')
     zippin_max_days = fields.Integer(string='Entrega estimada máxima')
-
 
 
     def set_only_the_date(self):
@@ -50,7 +49,6 @@ class ChooseDeliveryCarrier(models.TransientModel):
             raise ValidationError('Primero debe obtener la tarifa')
 
 
-
     def _get_shipment_rate(self):
         res = super(ChooseDeliveryCarrier, self)._get_shipment_rate()
         self.delete_pickup_points()
@@ -71,11 +69,9 @@ class ChooseDeliveryCarrier(models.TransientModel):
         return res
 
 
-
     def delete_pickup_points(self):
         res = self.env['zippin.shipping'].search([('order_id','=', int(self.order_id))]).unlink()
         return(res)
-
 
 
     def button_confirm(self):
@@ -113,7 +109,6 @@ class ChooseDeliveryCarrier(models.TransientModel):
                     'zippin_max_date': self.order_id.add_days_to_current_date(self.zippin_max_days),
                     'commitment_date': self.zippin_estimated_delivery,
                     'zippin_latest_shipping_query': datetime.now(),
-                    
                 })
         else:
             if self.delivery_type not in ('fixed', 'base_on_rule'):

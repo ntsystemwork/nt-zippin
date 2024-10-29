@@ -1,6 +1,6 @@
 from odoo import models, fields, api
 from odoo.exceptions import ValidationError
-from odoo.addons.zippin.models.delivery_carrier import ID_CORREO_ARGENTINO, ID_OCA, ID_ANDREANI, APIURL, ID_PICKUP_DELIVERY, ID_STANDARD_DELIVERY
+# from odoo.addons.zippin.models.delivery_carrier import ID_CORREO_ARGENTINO, ID_OCA, ID_ANDREANI, APIURL, ID_PICKUP_DELIVERY, ID_STANDARD_DELIVERY
 from requests.structures import CaseInsensitiveDict
 import requests, base64
 from datetime import datetime
@@ -9,11 +9,23 @@ import logging
 _logger = logging.getLogger(__name__)
 
 
-
+APIURL= "https://api.zippin.com.ar/v2"
+ID_CORREO_ARGENTINO = 233
+ID_OCA = 208
+ID_ANDREANI = 1
+ID_STANDARD_DELIVERY = 1
+ID_PICKUP_DELIVERY = 9
 
 
 class DeliveryCarrier(models.Model):
     _inherit = 'delivery.carrier'
+
+    delivery_type = fields.Selection(selection_add=[('zippin', 'Zippin')], ondelete={'zippin': 'set default'}, domain="[('active', '=', True)]")
+    zippin_pickup = fields.Many2one('zippin.shipping', string="Sucursales")
+    zippin_shipment = fields.Boolean('Conectar con Zippin',help='Conecta el proveedor de envíos con Zippin',index=True)
+    zippin_shipment_type = fields.Integer('Seleccionar Proveedor y Tipo de Envío') #se le asigna el shipping_type y no es el correcto
+    
+    zippin_shipment_type_is_pickup = fields.Boolean('Es envio a Sucursal')
 
     is_free = fields.Boolean('Es gratis?')
     # zippin_estimated_delivery = fields.Datetime(string='Entrega estimada')

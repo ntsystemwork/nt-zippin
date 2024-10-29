@@ -1,7 +1,7 @@
 import re
 from odoo import models, fields, api, _
 from odoo.exceptions import ValidationError
-from odoo.addons.zippin.models.delivery_carrier import ID_CORREO_ARGENTINO, ID_OCA, ID_ANDREANI, APIURL
+from odoo.addons.zippin_shipping.models.delivery_carrier import ID_CORREO_ARGENTINO, ID_OCA, ID_ANDREANI, APIURL
 from requests.structures import CaseInsensitiveDict
 import requests, base64
 from datetime import date, datetime, timedelta
@@ -45,6 +45,7 @@ class SaleOrder(models.Model):
     zippin_shipping_label_filename = fields.Char(compute='_compute_shipping_label_filename')
 
     # zippin_estimated_delivery = fields.Date(string='Entrega estimada')
+    zippin_delete_shipping_view = fields.Boolean(default='True')
 
     zippin_min_date = fields.Date(string='Entrega estimada mínima', tracking=True)
     zippin_max_date = fields.Date(string='Entrega estimada máxima', tracking=True)
