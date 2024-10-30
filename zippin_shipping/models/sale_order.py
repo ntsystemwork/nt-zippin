@@ -1,7 +1,7 @@
 import re
 from odoo import models, fields, api, _
 from odoo.exceptions import ValidationError
-from odoo.addons.zippin_shipping.models.delivery_carrier import ID_CORREO_ARGENTINO, ID_OCA, ID_ANDREANI, APIURL
+from .delivery_carrier import ID_CORREO_ARGENTINO, ID_OCA, ID_ANDREANI, APIURL
 from requests.structures import CaseInsensitiveDict
 import requests, base64
 from datetime import date, datetime, timedelta
@@ -196,7 +196,6 @@ class SaleOrder(models.Model):
         zippin_auth = base64.b64encode(zippin_auth.encode("utf-8")).decode("utf-8")
 
         headers["Authorization"] = "Basic " + zippin_auth
-
         return(headers)
 
 
@@ -308,6 +307,7 @@ class SaleOrder(models.Model):
         # raise ValidationError(str( data["items"] ))
 
         data["destination"]= self._zippin_to_shipping_data()
+        
         r = requests.post(url, headers=self._zippin_api_headers(), json=data)
 
         vals_log = {
@@ -317,6 +317,7 @@ class SaleOrder(models.Model):
             'request': str(data),
             'response': r.text,
         }
+        
         log_id = self.env['zippin.log'].create(vals_log)
         self.env.cr.commit()
 
@@ -334,7 +335,7 @@ class SaleOrder(models.Model):
             self.zippin_estimated_delivery_time = r.get('delivery_time') and r.get('delivery_time').get('estimated_delivery','')[:10] or ''
 
         else:
-            r= r.json()
+            r = r.json()
             raise ValidationError('Zippin Error: ' +r["message"]+'\n %s'%(r.get('error')))
 
 

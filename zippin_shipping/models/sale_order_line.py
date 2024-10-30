@@ -18,11 +18,11 @@ class SaleOrderLine(models.Model):
             #    raise ValidationError('Cuenta de Zippin mal configurada')
             vals_line = {
                     'order_id': vals.get('order_id'),
-                    'product_id': self.env.ref('nt-zippin.zippin_delivery_refund').id,
-                    'name': self.env.ref('nt-zippin.zippin_delivery_refund').name,
+                    'product_id': self.env.ref('zippin_shipping.zippin_delivery_refund').id,
+                    'name': self.env.ref('zippin_shipping.zippin_delivery_refund').name,
                     'price_unit': vals.get('price_unit') * (-1),
                     'product_uom_qty': 1,
-                    'product_uom': self.env.ref('nt-zippin.zippin_delivery_refund').uom_id.id,
+                    'product_uom': self.env.ref('zippin_shipping.zippin_delivery_refund').uom_id.id,
                     }
             result = super(SaleOrderLine, self).create(vals_line)
         return res
