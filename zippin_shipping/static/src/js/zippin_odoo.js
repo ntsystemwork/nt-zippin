@@ -72,6 +72,8 @@ odoo.define('zippin_shipping.payment', function(require) {
 
             // document.getElementById("zippin_car_suc").selectedIndex = "0";
             // document.getElementById("zippin_oca_suc").selectedIndex = "0";
+            document.getElementById("zippin_car_suc").selectedIndex = "0";
+            document.getElementById("zippin_oca_suc").selectedIndex = "0";
 
             let res = $('select.zippin_and_suc').val();
             var i = res.indexOf("carrier_id:");
@@ -103,6 +105,10 @@ odoo.define('zippin_shipping.payment', function(require) {
             // document.getElementById("zippin_car_suc").selectedIndex = "0";
             // document.getElementById("zippin_oca_suc").selectedIndex = "0";
             // document.getElementById("zippin_and_suc").selectedIndex = "0";
+
+            document.getElementById("zippin_car_suc").selectedIndex = "0";
+            document.getElementById("zippin_oca_suc").selectedIndex = "0";
+            document.getElementById("zippin_and_suc").selectedIndex = "0";
 
             ajax.jsonRpc('/shop/zippin_odoo', 'call', {
                 'carrier_id': '-1',

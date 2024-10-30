@@ -46,8 +46,8 @@
     ],
     'assets': {
         'web.assets_frontend': [
-            'zippin/static/src/js/zippin_odoo.js',
-            'zippin/static/src/scss/zippin_odoo.scss'
+            'zippin_shipping/static/src/js/zippin_odoo.js',
+            # 'zippin_shipping/static/src/scss/zippin_odoo.scss'
         ],
     },
 }
