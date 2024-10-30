@@ -17,8 +17,8 @@
 	            <field name="purchase_ok" eval="False"/>
         	    <field name="list_price">0.0</field>
 		    <field name="invoice_policy">order</field>
-		    <field name="property_account_expense_id" ref="nt-zippin.zippin_bonificacion_envio"></field>
-		    <field name="property_account_income_id" ref="nt-zippin.zippin_bonificacion_envio"></field>
+		    <field name="property_account_expense_id" ref="zippin_shipping.zippin_bonificacion_envio"></field>
+		    <field name="property_account_income_id" ref="zippin_shipping.zippin_bonificacion_envio"></field>
 	    </record>
 
 

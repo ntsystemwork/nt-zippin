@@ -1,16 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
 
-    <record id="zippin_zippin_sale_order_form" model="ir.ui.view">
+    <!-- <record id="zippin_zippin_sale_order_form" model="ir.ui.view">
         <field name="name">zippin.zippin.sale.order.form</field>
         <field name="model">sale.order</field>
         <field name="inherit_id" ref="zippin.view_company_page_zippin" ></field>
-	<field name="arch" type="xml">
-		<field name="zippin_shipping_label_filename" position="after">
-			<field name="zippin_estimated_delivery_time" readonly="1"/>
-		</field>
+		<field name="arch" type="xml">
+			<field name="zippin_shipping_label_filename" position="after">
+				<field name="zippin_estimated_delivery_time" readonly="1"/>
+			</field>
         </field>
-    </record>
+    </record> -->
 
     <record id="zippin_log_sale_order_form" model="ir.ui.view">
         <field name="name">zipping.log.sale.order.form</field>
@@ -45,6 +45,7 @@
 							<field name="zippin_shipping_tracking" readonly="1" /> 
 							<field name="zippin_shipping_tracking_external" readonly="1" />
 							<field name="zippin_shipping_label_filename" invisible="1" />
+							<field name="zippin_estimated_delivery_time" readonly="1"/>
 						</group>
 					</page>
 				</notebook>
