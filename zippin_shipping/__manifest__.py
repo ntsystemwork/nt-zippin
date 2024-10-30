@@ -20,14 +20,15 @@
 
     'version': '16.0.1.2.6',
     'depends': [
-        'base', 
+        'base',
+        'mrp',
         'account',
         'sale',
         'stock',
         'delivery',
         'product_dimension',
         'website_sale',
-        'l10n_ar'
+        'l10n_ar',
         ],
     
     'data': [

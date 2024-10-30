@@ -15,11 +15,14 @@ class ResCompany(models.Model):
         return re.sub(r'\s+', char, string)
     
     
-    @api.onchange('zippin_description_web')
+    @api.onchange('zippin_description_web', 'zippin_id', 'zippin_key', 'zippin_secret')
     def zippin_get_description_web(self):
         self.ensure_one()
         for company in self:
             if company.zippin_description_web:
                 company.zippin_description_web = self.replace_characters(company.zippin_description_web, '-')
-            else:
-                company.zippin_description_web = 'Zippin'
+                company.zippin_id = self.replace_characters(company.zippin_id, '')
+                company.zippin_key = self.replace_characters(company.zippin_key, '')
+                company.zippin_secret = self.replace_characters(company.zippin_secret, '')
+
+                

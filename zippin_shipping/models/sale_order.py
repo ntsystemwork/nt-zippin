@@ -52,12 +52,10 @@ class SaleOrder(models.Model):
     zippin_latest_shipping_query = fields.Date(string='Última consulta de envío')
 
 
-
     def add_days_to_current_date(self, days_to_add):
         current_date = datetime.now()
         new_date = current_date + timedelta(days=days_to_add)
         return str(new_date)
-
 
 
     def _check_carrier_quotation(self, force_carrier_id=None, keep_carrier=False):
@@ -85,7 +83,6 @@ class SaleOrder(models.Model):
         return res
 
 
-
     @api.depends('zippin_shipping_label_bin')
     def _compute_shipping_label_filename(self):
         self.ensure_one()
@@ -96,7 +93,6 @@ class SaleOrder(models.Model):
         name = name.replace('.', '_')
         name = name + '.pdf'
         self.zippin_shipping_label_filename = name
-
 
 
     def action_open_delivery_wizard(self):
@@ -112,7 +108,6 @@ class SaleOrder(models.Model):
         if self.zippin_shipping_tracking_external:
             res['zippin_shipping_tracking_external'] = self.zippin_shipping_tracking_external
         return res
-
 
 
     def _get_product_list(self,bom,r,qty):
@@ -157,7 +152,6 @@ class SaleOrder(models.Model):
         return r
 
 
-
     def _zippin_prepare_items(self):
         r = []
         if self.order_line:
@@ -186,7 +180,6 @@ class SaleOrder(models.Model):
         return(r)
 
 
-
     def _zippin_api_headers(self):
         headers = CaseInsensitiveDict()
         headers["Content-Type"] = "application/json"
@@ -197,7 +190,6 @@ class SaleOrder(models.Model):
 
         headers["Authorization"] = "Basic " + zippin_auth
         return(headers)
-
 
 
     def _zippin_get_origen_id(self):
@@ -216,7 +208,6 @@ class SaleOrder(models.Model):
             return(resp)
 
 
-
     def extract_street_and_number(self, address):
         if address in (False, None, ''):
             return False
@@ -225,7 +216,6 @@ class SaleOrder(models.Model):
         if match:
             return match.group(1).strip(), match.group(2)
         return False
-
 
 
     def _zippin_to_shipping_data(self):
@@ -259,7 +249,7 @@ class SaleOrder(models.Model):
                     raise ValidationError('El campo calle del contacto o la dirección de envio no tienen el formato correcto, se espera que el destino sea del siguiente formato "calle número"')
                 
                 street_name, street_number = home_address
-                    
+
                 r = {
                     "city": self.partner_shipping_id.city,
                     "state": self.partner_shipping_id.state_id.name,
