@@ -1,3 +1,5 @@
+import math
+
 from odoo import models, fields, api
 from odoo.exceptions import ValidationError
 from odoo.addons.zippin.models.delivery_carrier import ID_CORREO_ARGENTINO, ID_OCA, ID_ANDREANI, APIURL, ID_PICKUP_DELIVERY, ID_STANDARD_DELIVERY
@@ -39,10 +41,10 @@ class DeliveryCarrier(models.Model):
                 if bom_line.product_id.type == 'product':
                     for i in range(int(qty * bom_line.product_qty)):
                         product_list = {
-                            "weight": bom_line.product_id.weight * 1000,
-                            "height": bom_line.product_id.product_height,
-                            "width": bom_line.product_id.product_width,
-                            "length": bom_line.product_id.product_length,
+                            "weight": math.ceil(bom_line.product_id.weight * 1000),
+                            "height": math.ceil(bom_line.product_id.product_height),
+                            "width": math.ceil(bom_line.product_id.product_width),
+                            "length": math.ceil(bom_line.product_id.product_length),
                             "description": bom_line.product_id.name,
                             "classification_id": 1
                             }
@@ -50,10 +52,10 @@ class DeliveryCarrier(models.Model):
             elif bom_line.product_id.bom_ids[0].type == 'normal':
                 for i in range(int(qty * bom_line.product_qty)):
                     product_list = {
-                        "weight": bom_line.product_id.weight * 1000,
-                        "height": bom_line.product_id.product_height,
-                        "width": bom_line.product_id.product_width,
-                        "length": bom_line.product_id.product_length,
+                        "weight": math.ceil(bom_line.product_id.weight * 1000),
+                        "height": math.ceil(bom_line.product_id.product_height),
+                        "width": math.ceil(bom_line.product_id.product_width),
+                        "length": math.ceil(bom_line.product_id.product_length),
                         "description": bom_line.product_id.name,
                         "classification_id": 1
                         }
@@ -81,10 +83,10 @@ class DeliveryCarrier(models.Model):
                     for i in range(int(p.product_uom_qty)):
                         if p.product_id.type == 'product':
                             product_list = {
-                              "weight": p.product_id.weight * 1000,
-                              "height": p.product_id.product_height,
-                              "width": p.product_id.product_width,
-                              "length": p.product_id.product_length,
+                              "weight": math.ceil(p.product_id.weight * 1000),
+                              "height": math.ceil(p.product_id.product_height),
+                              "width": math.ceil(p.product_id.product_width),
+                              "length": math.ceil(p.product_id.product_length),
                               "description": p.product_id.name,
                               "classification_id": 1
                             }
