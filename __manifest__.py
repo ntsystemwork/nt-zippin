@@ -13,7 +13,7 @@
     'website': "https://www.InfotecLaPlata.com.ar",
     'category': 'Sales',
 
-    'version': '16.0.1.2.5',
+    'version': '17.0.0.0.0',
     'depends': ['delivery','account','stock','base','l10n_ar'],
 
     'data': [

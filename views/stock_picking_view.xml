@@ -7,7 +7,7 @@
         <field name="inherit_id" ref="stock.view_picking_form" ></field>
 	<field name="arch" type="xml">
 		<xpath expr="//notebook">
-			<page string="Zippin" attrs="{'invisible': [('picking_type_code','!=','outgoing')]}">
+			<page string="Zippin" invisible="picking_type_code != 'outgoing'">
 				<br />
 				<group string="Zippin">
 					<field name="zippin_shipping_id" />

@@ -5,10 +5,10 @@
             <field name="inherit_id" ref="delivery.choose_delivery_carrier_view_form"/>
             <field name="arch" type="xml">
                 <xpath expr="//div[1]" position="after">
-                    <label for="zippin_estimated_delivery" attrs="{'invisible': [('carrier_id','=', False)]}"/>
+                    <label for="zippin_estimated_delivery" invisible="carrier_id == False"/>
                     <div class="o_row">
-                        <field name='zippin_estimated_delivery' readonly="1" widget="date" options="{'currency_field': 'currency_id'}" attrs="{'invisible': [('carrier_id','=', False)]}"/>
-                        <button name="set_only_the_date" type="object" attrs="{'invisible': ['|',('delivery_type','in', ('fixed', 'base_on_rule')), ('carrier_id','=', False)]}">
+                        <field name='zippin_estimated_delivery' readonly="1" widget="date" options="{'currency_field': 'currency_id'}" invisible="carrier_id == False"/>
+                        <button name="set_only_the_date" type="object" invisible="delivery_type in ('fixed', 'base_on_rule') or carrier_id == False">
                             <i class="fa fa-arrow-right me-1"/>Guardar fecha
                         </button>
                     </div>

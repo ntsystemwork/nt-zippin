@@ -1,11 +1,11 @@
-import math
-
 from odoo import models, fields, api
 from odoo.exceptions import ValidationError
 from odoo.addons.zippin.models.delivery_carrier import ID_CORREO_ARGENTINO, ID_OCA, ID_ANDREANI, APIURL, ID_PICKUP_DELIVERY, ID_STANDARD_DELIVERY
 from requests.structures import CaseInsensitiveDict
 import requests, base64
 from datetime import datetime
+
+import math
 
 import logging
 _logger = logging.getLogger(__name__)
@@ -83,12 +83,12 @@ class DeliveryCarrier(models.Model):
                     for i in range(int(p.product_uom_qty)):
                         if p.product_id.type == 'product':
                             product_list = {
-                              "weight": math.ceil(p.product_id.weight * 1000),
-                              "height": math.ceil(p.product_id.product_height),
-                              "width": math.ceil(p.product_id.product_width),
-                              "length": math.ceil(p.product_id.product_length),
-                              "description": p.product_id.name,
-                              "classification_id": 1
+                                "weight": math.ceil(p.product_id.weight * 1000),
+                                "height": math.ceil(p.product_id.product_height),
+                                "width": math.ceil(p.product_id.product_width),
+                                "length": math.ceil(p.product_id.product_length),
+                                "description": p.product_id.name,
+                                "classification_id": 1
                             }
                             r.append(product_list)
                 else:
@@ -126,6 +126,7 @@ class DeliveryCarrier(models.Model):
         }
         response = r.json()
         _logger.error('\n\n'.join([f'{key} ==> {response[key]}' for key in response]))
+
         log_id = self.env['zippin.log'].create(vals_log)
         self.env.cr.commit()
 
