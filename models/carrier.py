@@ -171,14 +171,24 @@ class DeliveryCarrier(models.Model):
 
                 if i["service_type"]["id"] == ID_PICKUP_DELIVERY:
                     for f in i["pickup_points"]:
-                        pickup_points = {
-                            "order_id": order.id,
-                            "carrier_id": i["carrier"]["id"],
-                            "point_id": f["point_id"],
-                            "name": f["description"],
-                            "address": f["location"]["street"] + ' ' + f["location"]["street_number"] + ' ' + f["location"]["city"] + ' ' + f["location"]["state"],
-                            "logistic_type": i["logistic_type"]
-                        }
+                        if f["location"]["street_number"]:
+                            pickup_points = {
+                                "order_id": order.id,
+                                "carrier_id": i["carrier"]["id"],
+                                "point_id": f["point_id"],
+                                "name": f["description"],
+                                "address": f["location"]["street"] + ' ' + f["location"]["street_number"] + ' ' + f["location"]["city"] + ' ' + f["location"]["state"],
+                                "logistic_type": i["logistic_type"]
+                            }
+                        else:
+                            pickup_points = {
+                                "order_id": order.id,
+                                "carrier_id": i["carrier"]["id"],
+                                "point_id": f["point_id"],
+                                "name": f["description"],
+                                "address": f["location"]["street"] + ' ' + f["location"]["city"] + ' ' + f["location"]["state"],
+                                "logistic_type": i["logistic_type"]
+                            }
                         pickup_res.append(pickup_points)
             return {
                 'success': True,
