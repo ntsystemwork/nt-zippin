@@ -30,7 +30,7 @@ class ChooseDeliveryCarrier(models.TransientModel):
                         # 'zippin_estimated_delivery': self.zippin_estimated_delivery,
                         'zippin_min_date': self.order_id.add_days_to_current_date(self.zippin_min_days),
                         'zippin_max_date': self.order_id.add_days_to_current_date(self.zippin_max_days),
-                        'commitment_date': self.zippin_estimated_delivery,
+                        'commitment_date': fields.Date.to_date(self.zippin_estimated_delivery),
                         'zippin_latest_shipping_query': datetime.now(),
                         
                     })
@@ -39,7 +39,7 @@ class ChooseDeliveryCarrier(models.TransientModel):
                         # 'zippin_estimated_delivery': self.zippin_estimated_delivery,
                         'zippin_min_date': self.order_id.add_days_to_current_date(self.zippin_min_days),
                         'zippin_max_date': self.order_id.add_days_to_current_date(self.zippin_max_days),
-                        'commitment_date': self.zippin_estimated_delivery,
+                        'commitment_date': fields.Date.to_date(self.zippin_estimated_delivery),
                         'zippin_latest_shipping_query': datetime.now(),
                     })
             else:
@@ -95,7 +95,7 @@ class ChooseDeliveryCarrier(models.TransientModel):
                     # 'zippin_estimated_delivery': self.zippin_estimated_delivery,
                     'zippin_min_date': self.order_id.add_days_to_current_date(self.zippin_min_days),
                     'zippin_max_date': self.order_id.add_days_to_current_date(self.zippin_max_days),
-                    'commitment_date': self.zippin_estimated_delivery,
+                    'commitment_date': fields.Date.to_date(self.zippin_estimated_delivery),
                     'zippin_latest_shipping_query': datetime.now(),
                 })
             else:
@@ -111,7 +111,7 @@ class ChooseDeliveryCarrier(models.TransientModel):
                     # 'zippin_estimated_delivery': self.zippin_estimated_delivery,
                     'zippin_min_date': self.order_id.add_days_to_current_date(self.zippin_min_days),
                     'zippin_max_date': self.order_id.add_days_to_current_date(self.zippin_max_days),
-                    'commitment_date': self.zippin_estimated_delivery,
+                    'commitment_date': fields.Date.to_date(self.zippin_estimated_delivery),
                     'zippin_latest_shipping_query': datetime.now(),
                     
                 })
